@@ -1,6 +1,7 @@
 import hashlib
 import json
 import sys
+import math
 from time import time, sleep
 from urllib.parse import urlparse
 import requests
@@ -8,17 +9,16 @@ from flask import Flask, jsonify, request, render_template
 import ecdsa
 import threading
 import secrets
-import random
 
-def yerin_kapasitesini_bul(yer_kimligi):
-    hash_degeri = int(hashlib.md5(str(yer_kimligi).encode('utf-8')).hexdigest(), 16)
-    return (hash_degeri % 99) + 1  
+def calculate_node_capacity(node_id):
+    hash_value = int(hashlib.md5(str(node_id).encode('utf-8')).hexdigest(), 16)
+    return (hash_value % 99) + 1  # %1 ile %99 arası
 
-def veri_bu_yere_ait_mi(yer_kimligi, yerin_kapasitesi, veri_ozeti):
-    ikili_kombinasyon = f"{yer_kimligi}_{veri_ozeti}"
-    uyum_skoru = int(hashlib.md5(ikili_kombinasyon.encode('utf-8')).hexdigest(), 16)
-    skor_yuzdesi = (uyum_skoru % 100) + 1
-    return skor_yuzdesi <= yerin_kapasitesi
+def verify_data_affinity(node_id, node_capacity, data_summary):
+    pair_combination = f"{node_id}_{data_summary}"
+    affinity_score = int(hashlib.md5(pair_combination.encode('utf-8')).hexdigest(), 16)
+    score_percentage = (affinity_score % 99) + 1
+    return score_percentage <= node_capacity
 
 WORD_LIST = [
     "apple", "river", "mountain", "token", "coin", "node", "block", "chain", 
@@ -60,16 +60,14 @@ class Blockchain(object):
         self.BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD"
         self.lock = threading.Lock()
         
-        self.uzay_boslugu = {} 
-        self.bagli_noktalar = set()
+        self.chain_space = {} 
+        self.connected_nodes = set()
 
-        rastgele_sayi = secrets.randbelow(1000000000)
-        self.yer_kimligi = f"Yer_{rastgele_sayi}"
-        self.kapasite = yerin_kapasitesini_bul(self.yer_kimligi)
+        random_suffix = secrets.randbelow(1000000000)
+        self.node_id = f"Node_{random_suffix}"
+        self.storage_capacity = calculate_node_capacity(self.node_id)
         
         self.target_price = 0.0
-        self.market_price = 0.0
-
         self.BASE_MAX_MAIN = 21000000
         self.sub_coin_name = "SHIELD_COIN"
         self.supply_variance_limit = 1000000
@@ -80,8 +78,8 @@ class Blockchain(object):
         self.difficulty_blocks_left = 0
         self.user_stats = {}  
 
-        if not self.uzay_boslugu:
-            self.yeni_veri_firlat(proof=100, difficulty=4, previous_hash='1', force_catch=True)
+        if not self.chain_space:
+            self.mint_block(proof=100, difficulty=4, previous_hash='1', force_catch=True)
             
         self.start_background_sync()
 
@@ -90,51 +88,51 @@ class Blockchain(object):
         netloc = parsed_url.netloc if parsed_url.netloc else parsed_url.path
         if netloc:
             with self.lock:
-                self.bagli_noktalar.add(netloc)
+                self.connected_nodes.add(netloc)
 
     @property
     def nodes(self):
-        return list(self.bagli_noktalar)
+        return list(self.connected_nodes)
 
-    def veriyi_tut(self, block, force_catch=False):
-        veri_ozeti = block.get('hash', str(block['index']))
+    def store_block(self, block, force_catch=False):
+        data_summary = block.get('hash', str(block['index']))
         with self.lock:
-            if block['index'] not in self.uzay_boslugu:
-                if force_catch or veri_bu_yere_ait_mi(self.yer_kimligi, self.kapasite, veri_ozeti) or block['index'] == 1:
-                    self.uzay_boslugu[block['index']] = block
+            if block['index'] not in self.chain_space:
+                if force_catch or verify_data_affinity(self.node_id, self.storage_capacity, data_summary) or block['index'] == 1:
+                    self.chain_space[block['index']] = block
 
-    def bosluklari_doldur(self):
+    def sync_chain_data(self):
         while True:
             sleep(20)
-            for node in list(self.bagli_noktalar):
+            for node in list(self.connected_nodes):
                 try:
                     res_nodes = requests.get(f'http://{node}/nodes/list', timeout=3)
                     if res_nodes.status_code == 200:
                         for peer in res_nodes.json().get('nodes', []):
                             self.register_node(peer)
                             
-                    res = requests.get(f'http://{node}/uzay/kesitler', timeout=3)
-                    if res_nodes.status_code == 200:
-                        for block in res_nodes.json().get('havadaki_veriler', []):
-                            self.veriyi_tut(block)
+                    res = requests.get(f'http://{node}/space/fragments', timeout=3)
+                    if res.status_code == 200:
+                        for block in res.json().get('chain_blocks', []):
+                            self.store_block(block)
                 except Exception:
                     pass
 
     def start_background_sync(self):
-        threading.Thread(target=self.bosluklari_doldur, daemon=True).start()
+        threading.Thread(target=self.sync_chain_data, daemon=True).start()
 
     def get_chain_length(self):
-        if not self.uzay_boslugu:
+        if not self.chain_space:
             return 0
-        return max(self.uzay_boslugu.keys())
+        return max(self.chain_space.keys())
 
     @property
     def last_block(self):
-        if not self.uzay_boslugu:
+        if not self.chain_space:
             return None
-        return self.uzay_boslugu[self.get_chain_length()]
+        return self.chain_space[self.get_chain_length()]
 
-    def yeni_veri_firlat(self, proof, difficulty, previous_hash=None, force_catch=False):
+    def mint_block(self, proof, difficulty, previous_hash=None, force_catch=False):
         with self.lock:
             last = self.last_block
             prev_hash = previous_hash or (self.hash(last) if last else '1')
@@ -150,15 +148,15 @@ class Blockchain(object):
             block['hash'] = self.hash(block)
             self.current_transactions = []
             
-        self.veriyi_tut(block, force_catch=force_catch)
+        self.store_block(block, force_catch=force_catch)
         threading.Thread(target=self.broadcast_block, args=(block,), daemon=True).start()
         return block
 
     def broadcast_block(self, block):
-        for node in list(self.bagli_noktalar):
+        for node in list(self.connected_nodes):
             try:
-                requests.post(f'http://{node}/uzay/firlat', json=block, timeout=2)
-            except:
+                requests.post(f'http://{node}/space/broadcast', json=block, timeout=2)
+            except Exception:
                 pass
 
     def new_transaction(self, sender, recipient, amount, coin_type="MAIN"):
@@ -208,7 +206,7 @@ class Blockchain(object):
 
     def get_balance(self, address, coin_type="MAIN", include_pending=True):
         balance = 0
-        for block in self.uzay_boslugu.values():
+        for block in self.chain_space.values():
             for tx in block['transactions']:
                 if tx.get('coin_type', 'MAIN') == coin_type:
                     if tx['sender'] == address:
@@ -231,7 +229,7 @@ class Blockchain(object):
 
     def get_total_mined(self, coin_type="MAIN"):
         total = 0
-        for block in self.uzay_boslugu.values():
+        for block in self.chain_space.values():
             for tx in block['transactions']:
                 if tx.get('coin_type', 'MAIN') == coin_type and tx['sender'] == "0":
                     total += tx['amount']
@@ -239,8 +237,9 @@ class Blockchain(object):
 
     def get_alt_impact_power(self):
         alt_mined = self.get_total_mined(self.sub_coin_name)
-        power_ratio = 1.0 / (1.0 + (alt_mined / 300.0))
-        effective_ratio = max(0.01, power_ratio)
+        power_ratio = 0.99 / (1.0 + (alt_mined / 300.0))
+        # Kesin sınır: min %1 (0.01), max %99 (0.99)
+        effective_ratio = min(0.99, max(0.01, power_ratio))
         return round(effective_ratio, 4)
 
     def get_alt_coin_reward(self):
@@ -260,17 +259,45 @@ class Blockchain(object):
         else:
             return min(10, 4 + int(self.get_total_mined(self.sub_coin_name) / 300))
 
+    @property
+    def market_price(self):
+        total_mined = self.get_total_mined("MAIN")
+        total_blocks = self.get_chain_length()
+
+        if total_mined == 0 or total_blocks <= 1:
+            return 0.0
+
+        activity = (total_blocks - 1) + len(self.current_transactions)
+        demand_factor = math.log(activity + 1, 2) * 0.15
+
+        burned = self.burned_main_coins
+        circulating = max(1, total_mined - burned)
+        scarcity_factor = 1.0 + (burned / circulating) * 2.0
+
+        current_diff = self.get_difficulty("MAIN")
+        difficulty_weight = (current_diff - 3) * 0.20
+
+        shield_burned = self.get_balance(self.BURN_ADDRESS, self.sub_coin_name, False)
+        protocol_burn_pressure = math.sqrt(shield_burned) * 0.05
+
+        computed_price = demand_factor * scarcity_factor * (difficulty_weight + protocol_burn_pressure)
+        return round(max(0.0, computed_price), 2)
+
     def get_effective_price(self, address):
+        base_market = self.market_price
+        if base_market == 0.0:
+            return 0.0
+
         impact = self.get_alt_impact_power()
         stats = self.get_user_stats(address)
         
         if stats['price_mode'] == "STABILIZE":
-            return round(self.target_price + ((self.market_price - self.target_price) / (1.0 + (impact * 0.5))), 2)
+            return round(self.target_price + ((base_market - self.target_price) / (1.0 + (impact * 0.5))), 2)
         elif stats['price_mode'] == "BOOST":
-            return round(self.market_price * (1.0 + (stats['active_price_shift'] * impact * 0.02)), 2)
+            return round(base_market * (1.0 + (stats['active_price_shift'] * impact * 0.02)), 2)
         elif stats['price_mode'] == "DISCOUNT":
-            return round(self.market_price * (1.0 - min(0.6, (stats['active_price_shift'] * impact * 0.015))), 2)
-        return round(self.market_price, 2)
+            return round(base_market * (1.0 - min(0.6, (stats['active_price_shift'] * impact * 0.015))), 2)
+        return round(base_market, 2)
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -305,18 +332,18 @@ def register_nodes():
 def list_nodes():
     return jsonify({'nodes': blockchain.nodes}), 200
 
-@app.route('/uzay/kesitler', methods=['GET'])
+@app.route('/space/fragments', methods=['GET'])
 def send_fragments():
     return jsonify({
-        'yer_kimligi': blockchain.yer_kimligi,
-        'matematiksel_kapasite': f'%{blockchain.kapasite}',
-        'havadaki_veriler': list(blockchain.uzay_boslugu.values())
+        'node_id': blockchain.node_id,
+        'storage_capacity': f"%{blockchain.storage_capacity}",
+        'chain_blocks': list(blockchain.chain_space.values())
     }), 200
 
-@app.route('/uzay/firlat', methods=['POST'])
+@app.route('/space/broadcast', methods=['POST'])
 def receive_broadcast():
-    blockchain.veriyi_tut(request.get_json())
-    return jsonify({'mesaj': 'Veri uzaya fırlatıldı ve filtrelerden geçti.'}), 200
+    blockchain.store_block(request.get_json())
+    return jsonify({'message': 'Data packet broadcasted and verified by node filters.'}), 200
 
 @app.route('/mine', methods=['GET'])
 def mine():
@@ -342,7 +369,7 @@ def mine():
     last_block = blockchain.last_block
     proof = blockchain.proof_of_work(last_block, difficulty)
     
-    block = blockchain.yeni_veri_firlat(
+    block = blockchain.mint_block(
         proof, 
         difficulty, 
         previous_hash=blockchain.hash(last_block) if last_block else '1'
@@ -432,15 +459,7 @@ def protocol_action():
                 message = f"[PERSONAL] Personal difficulty updated for {blocks_granted} blocks."
 
         elif category == "price":
-            if scope == "global":
-                if action == "stabilize":
-                    blockchain.market_price = blockchain.target_price
-                elif action == "boost":
-                    blockchain.market_price += round(effective_power * 0.1, 2)
-                elif action == "discount":
-                    blockchain.market_price = max(0.0, blockchain.market_price - round(effective_power * 0.1, 2))
-                message = f"[GLOBAL] Global market price updated."
-            else:
+            if scope == "personal":
                 if action == "stabilize":
                     stats['price_mode'] = "STABILIZE"
                 elif action == "boost":
@@ -449,9 +468,11 @@ def protocol_action():
                 elif action == "discount":
                     stats['price_mode'] = "DISCOUNT"
                     stats['active_price_shift'] += round(effective_power * 0.1, 2)
-                message = f"[PERSONAL] Personal effective price modified."
+                message = "[PERSONAL] Personal effective price modified."
+            else:
+                message = "[GLOBAL] Global price dynamics are driven algorithmically by supply, demand, and chain volume."
 
-    impact_pct = int(impact * 100)
+    impact_pct = max(1, min(99, int(round(impact * 100))))
     return jsonify({
         'status': 'Success',
         'action_result': message,
@@ -466,27 +487,23 @@ def full_chain():
     user_address = request.args.get('address', 'Unknown_User')
     total_alt_mined = blockchain.get_total_mined(blockchain.sub_coin_name)
     burned_alt = blockchain.get_balance(blockchain.BURN_ADDRESS, blockchain.sub_coin_name, False)
-    impact_pct = int(blockchain.get_alt_impact_power() * 100)
+    impact_pct = max(1, min(99, int(round(blockchain.get_alt_impact_power() * 100))))
     
     return jsonify({
         '1_GLOBAL_DATA': {
+            'block_height': blockchain.get_chain_length(),
+            'active_peers': len(blockchain.nodes) + 1,
             'main_coin_supply': f"{blockchain.get_total_mined('MAIN')} / {blockchain.get_effective_max_supply(user_address)}",
             'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Burned: {burned_alt})",
             'global_market_price': f"{blockchain.market_price}$",
             'active_nodes': blockchain.nodes
         },
-        '2_NODE_DATA': {
-            'storage_capacity': f"%{blockchain.kapasite}", 
-            'node_coordinate': blockchain.yer_kimligi
-        },
-
-    
-        '3_USER_DATA': {
+        '2_USER_DATA': {
             'wallet_address': user_address, 
             'personal_effective_price': f"{blockchain.get_effective_price(user_address)}$", 
             'impact_power': f"{impact_pct}%"
         },
-        'uzaydaki_veriler': list(blockchain.uzay_boslugu.values())
+        'chain_data': list(blockchain.chain_space.values())
     }), 200
 
 if __name__ == '__main__':
