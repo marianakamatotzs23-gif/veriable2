@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinite Space Protocol Hub</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --success: #238636;
+            --danger: #da3633;
+            --shield: #a371f7;
+            --shield-hover: #bc8cff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container { 
+            max-width: 1280px; 
+            margin: auto; 
+        }
+
+        h1, h2, h3 { 
+            margin-top: 0; 
+            color: #f0f6fc; 
+        }
+        
+        .header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 20px; 
+            margin-bottom: 30px;
+        }
+
+        .header-controls { 
+            display: flex; 
+            gap: 15px; 
+            align-items: center; 
+        }
+
+        .grid-2 { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 20px; 
+        }
+        
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .shield-center {
+            border: 2px solid var(--shield);
+            background: linear-gradient(180deg, rgba(22,27,34,1) 0%, rgba(30,20,50,0.4) 100%);
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; 
+            margin-top: 20px; 
+            margin-bottom: 20px;
+        }
+
+        .action-box {
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-box:hover { 
+            border-color: var(--shield); 
+            background: rgba(163, 113, 247, 0.1); 
+        }
+
+        .action-box.selected { 
+            border-color: var(--accent); 
+            background: rgba(88, 166, 255, 0.15); 
+            box-shadow: 0 0 10px rgba(88, 166, 255, 0.2); 
+        }
+        
+        .action-title { 
+            font-weight: bold; 
+            font-size: 13px; 
+            color: #fff; 
+            margin-bottom: 4px; 
+            text-transform: uppercase; 
+        }
+
+        .action-sub { 
+            font-size: 11px; 
+            color: var(--text-muted); 
+        }
+
+        .stat-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+        }
+
+        .stat-label { 
+            color: var(--text-muted); 
+            font-size: 14px;
+        }
+
+        .stat-val { 
+            font-weight: bold; 
+            font-size: 15px; 
+        }
+
+        input, select, textarea, button {
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 6px; 
+            margin-bottom: 16px;
+            border-radius: 6px; 
+            border: 1px solid var(--border);
+            background: #010409; 
+            color: #fff; 
+            font-size: 14px; 
+            box-sizing: border-box;
+        }
+
+        button {
+            cursor: pointer; 
+            font-weight: bold; 
+            border: none;
+            background-color: var(--accent); 
+            color: #fff;
+            text-transform: uppercase; 
+            letter-spacing: 0.5px;
+        }
+
+        button:hover { 
+            opacity: 0.9; 
+        }
+
+        button.btn-shield { 
+            background-color: var(--shield); 
+        }
+
+        button.btn-shield:hover { 
+            background-color: var(--shield-hover); 
+        }
+
+        button.btn-success { 
+            background-color: var(--success); 
+        }
+
+        .sim-box {
+            background: #010409; 
+            border: 1px dashed var(--shield);
+            border-radius: 8px; 
+            padding: 16px; 
+            margin-bottom: 16px;
+        }
+
+        pre {
+            background: #000; 
+            padding: 12px; 
+            border-radius: 6px;
+            border: 1px solid var(--border); 
+            overflow-x: auto; 
+            font-size: 12px; 
+            max-height: 120px;
+        }
+
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; }
+        .goog-logo-link { display: none !important; }
+        .goog-te-gadget { color: transparent !important; }
+        .goog-te-combo {
+            background-color: var(--surface) !important;
+            color: var(--text-main) !important;
+            border: 1px solid var(--border) !important;
+            padding: 8px 12px !important;
+            border-radius: 6px !important;
+            font-size: 13px !important;
+            cursor: pointer;
+            margin: 0 !important;
+        }
+        #google_translate_element { display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div>
+            <h1>Infinite Space Protocol Hub</h1>
+            <div style="color: var(--text-muted);">Decentralized Node & Fractional Network Modulator</div>
+        </div>
+        <div class="header-controls">
+            <div id="google_translate_element"></div>
+            <button onclick="refreshNetwork()" style="width: auto; padding: 10px 20px; margin: 0;">REFRESH NETWORK</button>
+        </div>
+    </div>
+
+    <!-- LIVE NETWORK STATS -->
+    <div class="card">
+        <h3>Live Network & Space Status</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
+            <div class="stat-row"><span class="stat-label">Node Coordinate:</span><span id="stat-coord" class="stat-val" style="color: var(--accent);">-</span></div>
+            <div class="stat-row"><span class="stat-label">Storage Capacity:</span><span id="stat-cap" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Main Coin Supply:</span><span id="stat-main" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Shield Coin Circulating:</span><span id="stat-alt" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Current Impact Power:</span><span id="stat-impact" class="stat-val" style="color: var(--shield);">-</span></div>
+            <div class="stat-row"><span class="stat-label">Global Market Price:</span><span id="stat-market" class="stat-val">-</span></div>
+        </div>
+    </div>
+
+    <!-- SHIELD COIN COMMAND CENTER -->
+    <div class="card shield-center">
+        <h2>🛡️ SHIELD COIN COMMAND CENTER</h2>
+        <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
+            Burn your Helper Coins (Shield) to trigger Personal or Global network modifications safely.
+        </p>
+
+        <label class="stat-label">Your Wallet Address (Public Key):</label>
+        <input type="text" id="cmd-addr" placeholder="Enter Public Key...">
+
+        <label class="stat-label" style="color: var(--danger);">Signature (Private Key):</label>
+        <input type="password" id="cmd-priv" placeholder="Enter Private Key to authorize this transaction...">
+
+        <label class="stat-label" style="color: var(--accent);">Select Scope (Who will this affect?):</label>
+        <select id="cmd-scope" onchange="runSimulation()" style="border-color: var(--accent);">
+            <option value="personal">[PERSONAL] Apply modifications only to my wallet</option>
+            <option value="global">[GLOBAL] Apply modifications to the entire network</option>
+        </select>
+
+        <div class="action-grid">
+            <div class="action-box" onclick="selectAction('price', 'stabilize', this)">
+                <div class="action-title">⚓ PEG PRICE</div>
+                <div class="action-sub">Stabilize effective value</div>
+            </div>
+            <div class="action-box" onclick="selectAction('price', 'boost', this)">
+                <div class="action-title">📈 BOOST PRICE</div>
+                <div class="action-sub">Increase effective value</div>
+            </div>
+            <div class="action-box" onclick="selectAction('price', 'discount', this)">
+                <div class="action-title">📉 DISCOUNT PRICE</div>
+                <div class="action-sub">Decrease effective value</div>
+            </div>
+            <div class="action-box" onclick="selectAction('supply', 'burn_main', this)">
+                <div class="action-title">🔥 BURN SUPPLY</div>
+                <div class="action-sub">Destroy main coins (Global or Personal)</div>
+            </div>
+            <div class="action-box" onclick="selectAction('supply', 'expand_supply', this)">
+                <div class="action-title">🌌 EXPAND CAP</div>
+                <div class="action-sub">Increase max supply (Global or Personal)</div>
+            </div>
+            <div class="action-box" onclick="selectAction('difficulty', 'ease', this)">
+                <div class="action-title">⛏️ EASE MINING</div>
+                <div class="action-sub">Decrease difficulty safely</div>
+            </div>
+            <div class="action-box" onclick="selectAction('difficulty', 'tighten', this)">
+                <div class="action-title">🧱 TIGHTEN SECURITY</div>
+                <div class="action-sub">Increase difficulty</div>
+            </div>
+        </div>
+
+        <label class="stat-label">Amount of Shield Coins to Burn:</label>
+        <input type="number" id="cmd-amount" placeholder="e.g. 5.5" min="0.001" step="any" oninput="runSimulation()">
+
+        <div class="sim-box" id="sim-box" style="display: none;">
+            <div style="color: var(--accent); font-weight: bold; margin-bottom: 8px;">Simulation Preview:</div>
+            <div id="sim-text" style="color: var(--text-main); font-size: 14px; line-height: 1.5;">-</div>
+        </div>
+
+        <button class="btn-shield" onclick="executeCommand()">EXECUTE PROTOCOL COMMAND</button>
+        <pre id="cmd-log" style="display: none;"></pre>
+    </div>
+
+    <!-- WALLET & MINING HUBS -->
+    <div class="grid-2">
+        <div class="card">
+            <h2>Wallet Hub</h2>
+            <button class="btn-success" onclick="createWallet()">GENERATE 12-WORD WALLET</button>
+            
+            <div id="wallet-keys" style="display: none; margin-top: 15px;">
+                <div style="background-color: rgba(218, 54, 51, 0.1); color: var(--danger); padding: 15px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 20px; font-weight: bold; text-align: center; font-size: 14px;">
+                    ⚠️ DİKKAT: 12 kelimelik kurtarma şifrenizi ve Private Key'inizi güvenli bir yere kaydedin! Kaybederseniz coin'lerinize bir daha asla ulaşamazsınız!
+                </div>
+
+                <label class="stat-label">12-Word Recovery Phrase (Save Securely):</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <textarea id="disp-seed" rows="2" readonly style="font-weight: bold; color: var(--shield); resize: none; flex: 1; margin: 0;"></textarea>
+                    <button onclick="kopyalaGirdi('disp-seed')" style="width: auto; padding: 10px; margin: 0;">📋 KOPYALA</button>
+                </div>
+                
+                <label class="stat-label" style="margin-top: 15px; display: block;">Wallet Address (Public Key):</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <pre id="disp-pub" style="flex: 1; margin: 0;"></pre>
+                    <button onclick="kopyalaMetin('disp-pub')" style="width: auto; padding: 10px; margin: 0;">📋 KOPYALA</button>
+                </div>
+                
+                <label class="stat-label" style="margin-top: 15px; display: block; color: var(--danger);">Private Key (Used for Signatures):</label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <pre id="disp-priv-key" style="color: var(--danger); flex: 1; margin: 0;"></pre>
+                    <button onclick="kopyalaMetin('disp-priv-key')" style="width: auto; padding: 10px; margin: 0;">📋 KOPYALA</button>
+                </div>
+            </div>
+
+            <hr style="border-color: var(--border); margin: 20px 0;">
+            
+            <h3>Recover Wallet</h3>
+            <textarea id="rec-seed" rows="2" placeholder="Enter your 12-word seed phrase..." style="resize: none;"></textarea>
+            <button class="btn-shield" onclick="recoverWallet()">RECOVER WALLET</button>
+
+            <hr style="border-color: var(--border); margin: 20px 0;">
+            
+            <h3>Check Balance</h3>
+            <input type="text" id="chk-addr" placeholder="Enter Wallet Address">
+            <button onclick="checkBalance()">CHECK BALANCE</button>
+            <div id="balance-res" style="display: none; margin-top: 15px;">
+                <div class="stat-row"><span class="stat-label">MAIN COIN:</span><span id="bal-main" class="stat-val">0</span></div>
+                <div class="stat-row"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: var(--shield);">0</span></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Mining Hub</h2>
+            <p style="color: var(--text-muted); font-size: 13px;">Veriler fiziksel diske değil, sonsuz RAM uzayına fırlatılır. Madencilik işlemi bu uzayda gerçekleşir.</p>
+            
+            <label class="stat-label">Miner Address:</label>
+            <input type="text" id="mine-addr" placeholder="Enter Wallet Address">
+
+            <label class="stat-label">Target Asset:</label>
+            <select id="mine-type">
+                <option value="MAIN">MAIN COIN (Standard & Limited)</option>
+                <option value="ALT">SHIELD COIN (Protocol Modulator)</option>
+            </select>
+
+            <button id="btn-mine" onclick="startMining()">START MINING</button>
+            <pre id="mine-log" style="display: none;"></pre>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'en'
+        }, 'google_translate_element');
+    }
+</script>
+<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
+<script>
+    const API = window.location.origin;
+    let currentImpact = 1.0;
+    let currentMarket = 0.0;
+    let activeCategory = null;
+    let activeAction = null;
+
+    window.onload = refreshNetwork;
+
+    function selectAction(category, action, element) {
+        activeCategory = category;
+        activeAction = action;
+        
+        document.querySelectorAll('.action-box').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        
+        runSimulation();
+    }
+
+    function runSimulation() {
+        const amount = parseFloat(document.getElementById('cmd-amount').value) || 0;
+        const box = document.getElementById('sim-box');
+        const text = document.getElementById('sim-text');
+        const scope = document.getElementById('cmd-scope').value;
+
+        if (amount <= 0 || !activeAction) {
+            box.style.display = 'none'; return;
+        }
+
+        box.style.display = 'block';
+        const scopeTag = scope === 'personal' ? '<strong>[PERSONAL]</strong>' : '<strong style="color: var(--danger);">[GLOBAL]</strong>';
+        text.innerHTML = `${scopeTag} Action <strong>${activeAction}</strong> will be executed using current impact power.`;
+    }
+
+    async function refreshNetwork() {
+        try {
+            const res = await fetch(`${API}/chain`);
+            const data = await res.json();
+            
+            document.getElementById('stat-main').innerText = data["1_GLOBAL_DATA"]?.["main_coin_supply"] || "-";
+            document.getElementById('stat-alt').innerText = data["1_GLOBAL_DATA"]?.["shield_coin_circulating"] || "-";
+            document.getElementById('stat-impact').innerText = (data["3_USER_DATA"]?.["impact_power"] || "100%");
+            document.getElementById('stat-market').innerText = "$" + (data["1_GLOBAL_DATA"]?.["global_market_price"] || "0.0$");
+            document.getElementById('stat-coord').innerText = data["2_NODE_DATA"]?.["node_coordinate"] || "-";
+            document.getElementById('stat-cap').innerText = data["2_NODE_DATA"]?.["storage_capacity"] || "-";
+        } catch (e) { console.error("API Error:", e); }
+    }
+
+    async function executeCommand() {
+        const addr = document.getElementById('cmd-addr').value.trim();
+        const privKey = document.getElementById('cmd-priv').value.trim();
+        const amount = parseFloat(document.getElementById('cmd-amount').value);
+        const log = document.getElementById('cmd-log');
+        const scope = document.getElementById('cmd-scope').value;
+
+        if (!addr || !privKey || !activeCategory || isNaN(amount) || amount <= 0) {
+            return alert("Please select an action, enter a valid wallet address, Private Key, and amount.");
+        }
+
+        log.style.display = "block";
+        log.innerText = "Verifying Signature and Executing protocol modulation...";
+
+        try {
+            const res = await fetch(`${API}/protocol/act`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    address: addr, 
+                    private_key: privKey, 
+                    alt_amount: amount, 
+                    category: activeCategory, 
+                    action: activeAction,
+                    scope: scope
+                })
+            });
+            log.innerText = JSON.stringify(await res.json(), null, 2);
+            refreshNetwork(); checkBalance();
+        } catch (e) { log.innerText = "Execution failed."; }
+    }
+
+    async function createWallet() {
+        const res = await fetch(`${API}/wallet/new`);
+        const data = await res.json();
+        document.getElementById('disp-seed').value = data.mnemonic;
+        document.getElementById('disp-pub').innerText = data.public_key;
+        document.getElementById('disp-priv-key').innerText = data.private_key; 
+        document.getElementById('wallet-keys').style.display = 'block';
+    }
+
+    async function recoverWallet() {
+        const mnemonic = document.getElementById('rec-seed').value.trim();
+        if (!mnemonic) return alert("Please enter your 12-word seed phrase.");
+
+        try {
+            const res = await fetch(`${API}/wallet/recover`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mnemonic: mnemonic })
+            });
+            const data = await res.json();
+            if (data.public_key) {
+                document.getElementById('disp-seed').value = mnemonic;
+                document.getElementById('disp-pub').innerText = data.public_key;
+                document.getElementById('disp-priv-key').innerText = data.private_key;
+                document.getElementById('wallet-keys').style.display = 'block';
+                alert("Wallet successfully recovered!");
+            } else {
+                alert(data.error || "Recovery failed.");
+            }
+        } catch (e) {
+            alert("Network error.");
+        }
+    }
+
+    async function checkBalance() {
+        const addr = document.getElementById('chk-addr').value.trim();
+        if(!addr) return alert("Enter Wallet Address");
+
+        const data = await (await fetch(`${API}/chain?address=${addr}`)).json();
+        let main = 0, alt = 0;
+        const blocks = data.uzay_boslugu || [];
+        
+        blocks.forEach(b => {
+            if(b.transactions) {
+                b.transactions.forEach(tx => {
+                    const coin = tx.coin_type || "MAIN";
+                    if (tx.recipient === addr) coin === "MAIN" ? main += tx.amount : alt += tx.amount;
+                    if (tx.sender === addr) coin === "MAIN" ? main -= tx.amount : alt -= tx.amount;
+                });
+            }
+        });
+        
+        document.getElementById('bal-main').innerText = main;
+        document.getElementById('bal-alt').innerText = alt;
+        document.getElementById('balance-res').style.display = 'block';
+    }
+
+    async function startMining() {
+        const addr = document.getElementById('mine-addr').value.trim();
+        const coin = document.getElementById('mine-type').value;
+        const btn = document.getElementById('btn-mine');
+        const log = document.getElementById('mine-log');
+
+        if (!addr) return alert("Please enter miner address.");
+
+        btn.disabled = true; btn.innerText = "MINING IN PROGRESS...";
+        log.style.display = "block"; log.innerText = "Computing SHA-256 Hash. Please wait...";
+
+        try {
+            const data = await (await fetch(`${API}/mine?address=${addr}&coin=${coin}`)).json();
+            log.innerText = JSON.stringify(data, null, 2);
+            refreshNetwork(); checkBalance();
+        } catch (e) { log.innerText = "Mining timeout or error."; }
+        finally { btn.disabled = false; btn.innerText = "START MINING"; }
+    }
+
+    function kopyalaGirdi(elementId) {
+        var copyText = document.getElementById(elementId);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value).then(function() {
+            alert("Kopyalandı!");
+        });
+    }
+
+    function kopyalaMetin(elementId) {
+        var copyText = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(copyText).then(function() {
+            alert("Başarıyla kopyalandı!");
+        });
+    }
+</script>
+</body>
+</html>
