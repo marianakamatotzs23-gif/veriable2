@@ -479,6 +479,8 @@ def full_chain():
             'storage_capacity': f"%{blockchain.kapasite}", 
             'node_coordinate': blockchain.yer_kimligi
         },
+
+    
         '3_USER_DATA': {
             'wallet_address': user_address, 
             'personal_effective_price': f"{blockchain.get_effective_price(user_address)}$", 
