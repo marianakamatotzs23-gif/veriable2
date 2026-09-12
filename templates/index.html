@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Infinite Space Protocol Hub</title>
+    <title>Variable Coin Protocol Hub</title>
     <style>
         :root {
             --bg: #0d1117;
@@ -184,22 +184,6 @@
             font-size: 12px; 
             max-height: 120px;
         }
-
-        .goog-te-banner-frame.skiptranslate { display: none !important; }
-        body { top: 0px !important; }
-        .goog-logo-link { display: none !important; }
-        .goog-te-gadget { color: transparent !important; }
-        .goog-te-combo {
-            background-color: var(--surface) !important;
-            color: var(--text-main) !important;
-            border: 1px solid var(--border) !important;
-            padding: 8px 12px !important;
-            border-radius: 6px !important;
-            font-size: 13px !important;
-            cursor: pointer;
-            margin: 0 !important;
-        }
-        #google_translate_element { display: inline-block; }
     </style>
 </head>
 <body>
@@ -207,21 +191,20 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1>Infinite Space Protocol Hub</h1>
-            <div style="color: var(--text-muted);">Decentralized Node & Fractional Network Modulator</div>
+            <h1>Variable Coin Protocol Hub</h1>
+            <div style="color: var(--text-muted);">Decentralized Ledger & Dynamic Governance Architecture</div>
         </div>
         <div class="header-controls">
-            <div id="google_translate_element"></div>
             <button onclick="refreshNetwork()" style="width: auto; padding: 10px 20px; margin: 0;">REFRESH NETWORK</button>
         </div>
     </div>
 
     <!-- LIVE NETWORK STATS -->
     <div class="card">
-        <h3>Live Network & Space Status</h3>
+        <h3>Live Network Status</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px;">
-            <div class="stat-row"><span class="stat-label">Node Coordinate:</span><span id="stat-coord" class="stat-val" style="color: var(--accent);">-</span></div>
-            <div class="stat-row"><span class="stat-label">Storage Capacity:</span><span id="stat-cap" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Block Height:</span><span id="stat-height" class="stat-val" style="color: var(--accent);">-</span></div>
+            <div class="stat-row"><span class="stat-label">Active Peers:</span><span id="stat-peers" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Main Coin Supply:</span><span id="stat-main" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Shield Coin Circulating:</span><span id="stat-alt" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Current Impact Power:</span><span id="stat-impact" class="stat-val" style="color: var(--shield);">-</span></div>
@@ -233,7 +216,7 @@
     <div class="card shield-center">
         <h2>🛡️ SHIELD COIN COMMAND CENTER</h2>
         <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px;">
-            Burn your Helper Coins (Shield) to trigger Personal or Global network modifications safely.
+            Burn helper tokens (Shield) to trigger authorized Personal or Global network modifications safely.
         </p>
 
         <label class="stat-label">Your Wallet Address (Public Key):</label>
@@ -299,25 +282,25 @@
             
             <div id="wallet-keys" style="display: none; margin-top: 15px;">
                 <div style="background-color: rgba(218, 54, 51, 0.1); color: var(--danger); padding: 15px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 20px; font-weight: bold; text-align: center; font-size: 14px;">
-                    ⚠️ DİKKAT: 12 kelimelik kurtarma şifrenizi ve Private Key'inizi güvenli bir yere kaydedin! Kaybederseniz coin'lerinize bir daha asla ulaşamazsınız!
+                    ⚠️ WARNING: Store your 12-word recovery phrase and Private Key securely! If lost, your assets cannot be recovered!
                 </div>
 
                 <label class="stat-label">12-Word Recovery Phrase (Save Securely):</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <textarea id="disp-seed" rows="2" readonly style="font-weight: bold; color: var(--shield); resize: none; flex: 1; margin: 0;"></textarea>
-                    <button onclick="kopyalaGirdi('disp-seed')" style="width: auto; padding: 10px; margin: 0;">📋 KOPYALA</button>
+                    <button onclick="copyInputField('disp-seed')" style="width: auto; padding: 10px; margin: 0;">📋 COPY</button>
                 </div>
                 
                 <label class="stat-label" style="margin-top: 15px; display: block;">Wallet Address (Public Key):</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <pre id="disp-pub" style="flex: 1; margin: 0;"></pre>
-                    <button onclick="kopyalaMetin('disp-pub')" style="width: auto; padding: 10px; margin: 0;">📋 KOPYALA</button>
+                    <button onclick="copyTextContent('disp-pub')" style="width: auto; padding: 10px; margin: 0;">📋 COPY</button>
                 </div>
                 
                 <label class="stat-label" style="margin-top: 15px; display: block; color: var(--danger);">Private Key (Used for Signatures):</label>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <pre id="disp-priv-key" style="color: var(--danger); flex: 1; margin: 0;"></pre>
-                    <button onclick="kopyalaMetin('disp-priv-key')" style="width: auto; padding: 10px; margin: 0;">📋 KOPYALA</button>
+                    <button onclick="copyTextContent('disp-priv-key')" style="width: auto; padding: 10px; margin: 0;">📋 COPY</button>
                 </div>
             </div>
 
@@ -340,7 +323,7 @@
 
         <div class="card">
             <h2>Mining Hub</h2>
-            <p style="color: var(--text-muted); font-size: 13px;">Veriler fiziksel diske değil, sonsuz RAM uzayına fırlatılır. Madencilik işlemi bu uzayda gerçekleşir.</p>
+            <p style="color: var(--text-muted); font-size: 13px;">Consensus verification and block transactions are securely resolved via distributed computing power.</p>
             
             <label class="stat-label">Miner Address:</label>
             <input type="text" id="mine-addr" placeholder="Enter Wallet Address">
@@ -357,19 +340,8 @@
     </div>
 </div>
 
-<script type="text/javascript">
-    function googleTranslateElementInit() {
-        new google.translate.TranslateElement({
-            pageLanguage: 'en'
-        }, 'google_translate_element');
-    }
-</script>
-<script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-
 <script>
     const API = window.location.origin;
-    let currentImpact = 1.0;
-    let currentMarket = 0.0;
     let activeCategory = null;
     let activeAction = null;
 
@@ -405,12 +377,19 @@
             const res = await fetch(`${API}/chain`);
             const data = await res.json();
             
+            document.getElementById('stat-height').innerText = data["1_GLOBAL_DATA"]?.["block_height"] || "1";
+            document.getElementById('stat-peers').innerText = data["1_GLOBAL_DATA"]?.["active_peers"] || "1";
             document.getElementById('stat-main').innerText = data["1_GLOBAL_DATA"]?.["main_coin_supply"] || "-";
             document.getElementById('stat-alt').innerText = data["1_GLOBAL_DATA"]?.["shield_coin_circulating"] || "-";
-            document.getElementById('stat-impact').innerText = (data["3_USER_DATA"]?.["impact_power"] || "100%");
-            document.getElementById('stat-market').innerText = "$" + (data["1_GLOBAL_DATA"]?.["global_market_price"] || "0.0$");
-            document.getElementById('stat-coord').innerText = data["2_NODE_DATA"]?.["node_coordinate"] || "-";
-            document.getElementById('stat-cap').innerText = data["2_NODE_DATA"]?.["storage_capacity"] || "-";
+            
+            let impactStr = data["2_USER_DATA"]?.["impact_power"] || "99%";
+            document.getElementById('stat-impact').innerText = impactStr;
+
+            let priceStr = data["1_GLOBAL_DATA"]?.["global_market_price"] || "0.0$";
+            if (!priceStr.includes("$")) {
+                priceStr = "$" + priceStr;
+            }
+            document.getElementById('stat-market').innerText = priceStr;
         } catch (e) { console.error("API Error:", e); }
     }
 
@@ -426,7 +405,7 @@
         }
 
         log.style.display = "block";
-        log.innerText = "Verifying Signature and Executing protocol modulation...";
+        log.innerText = "Verifying signature and executing protocol modulation...";
 
         try {
             const res = await fetch(`${API}/protocol/act`, {
@@ -482,11 +461,11 @@
 
     async function checkBalance() {
         const addr = document.getElementById('chk-addr').value.trim();
-        if(!addr) return alert("Enter Wallet Address");
+        if(!addr) return alert("Enter wallet address");
 
         const data = await (await fetch(`${API}/chain?address=${addr}`)).json();
         let main = 0, alt = 0;
-        const blocks = data.uzay_boslugu || [];
+        const blocks = data.chain_data || [];
         
         blocks.forEach(b => {
             if(b.transactions) {
@@ -522,23 +501,21 @@
         finally { btn.disabled = false; btn.innerText = "START MINING"; }
     }
 
-    function kopyalaGirdi(elementId) {
+    function copyInputField(elementId) {
         var copyText = document.getElementById(elementId);
         copyText.select();
         copyText.setSelectionRange(0, 99999);
         navigator.clipboard.writeText(copyText.value).then(function() {
-            alert("Kopyalandı!");
+            alert("Copied to clipboard!");
         });
     }
 
-    function kopyalaMetin(elementId) {
+    function copyTextContent(elementId) {
         var copyText = document.getElementById(elementId).innerText;
         navigator.clipboard.writeText(copyText).then(function() {
-            alert("Başarıyla kopyalandı!");
+            alert("Successfully copied to clipboard!");
         });
     }
 </script>
 </body>
-
-    
 </html>
