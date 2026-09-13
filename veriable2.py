@@ -12,7 +12,7 @@ import secrets
 
 def calculate_node_capacity(node_id):
     hash_value = int(hashlib.md5(str(node_id).encode('utf-8')).hexdigest(), 16)
-    return (hash_value % 99) + 1  # %1 ile %99 arası
+    return (hash_value % 99) + 1
 
 def verify_data_affinity(node_id, node_capacity, data_summary):
     pair_combination = f"{node_id}_{data_summary}"
@@ -69,6 +69,7 @@ class Blockchain(object):
         
         self.target_price = 0.0
         self.BASE_MAX_MAIN = 21000000
+        self.BASE_MAIN_REWARD = 50.0
         self.sub_coin_name = "SHIELD_COIN"
         self.supply_variance_limit = 1000000
         self.dynamic_supply_offset = 0
@@ -235,15 +236,36 @@ class Blockchain(object):
                     total += tx['amount']
         return total
 
-    def get_alt_impact_power(self):
-        alt_mined = self.get_total_mined(self.sub_coin_name)
-        power_ratio = 0.99 / (1.0 + (alt_mined / 300.0))
-        # Kesin sınır: min %1 (0.01), max %99 (0.99)
-        effective_ratio = min(0.99, max(0.01, power_ratio))
-        return round(effective_ratio, 4)
+    def get_node_power(self, coin_type="MAIN", address=None):
+        if coin_type == "MAIN":
+            total_mined = self.get_total_mined("MAIN")
+            max_limit = self.get_effective_max_supply(address)
+            if total_mined >= max_limit:
+                return 0.0
+            progress = total_mined / max_limit
+            power = 99.0 * (1.0 - progress)
+            return max(0.0, round(power, 6))
+        else:
+            alt_mined = self.get_total_mined(self.sub_coin_name)
+            alt_burned = self.get_balance(self.BURN_ADDRESS, self.sub_coin_name, False)
+            total_activity = alt_mined + alt_burned
+            decay_factor = 1.0 + (total_activity / 5000.0)
+            power = 99.0 / decay_factor
+            return max(0.000001, round(power, 8))
+
+    def get_main_coin_reward(self, address=None):
+        power = self.get_node_power("MAIN", address)
+        if power <= 0.0:
+            return 0.0
+        reward = self.BASE_MAIN_REWARD * (power / 99.0)
+        return max(0.000001, round(reward, 6))
 
     def get_alt_coin_reward(self):
-        return max(0.001, round(5.0 / (1.0 + (self.get_total_mined(self.sub_coin_name) / 2000.0)), 4))
+        power = self.get_node_power(self.sub_coin_name)
+        return max(0.000001, round(power * 0.05, 6))
+
+    def get_alt_impact_power(self):
+        return max(0.000001 / 99.0, min(1.0, self.get_node_power(self.sub_coin_name) / 99.0))
 
     def get_difficulty(self, coin_type="MAIN", address=None):
         total_blocks = self.get_chain_length()
@@ -355,14 +377,16 @@ def mine():
     difficulty = blockchain.get_difficulty(coin_type=selected_coin, address=miner_address)
 
     if selected_coin == "MAIN":
-        if blockchain.get_total_mined("MAIN") + 50 > blockchain.get_effective_max_supply(miner_address):
-            return jsonify({'message': 'Main coin supply cap reached!'}), 400
-        blockchain.new_transaction(sender="0", recipient=miner_address, amount=50, coin_type="MAIN")
-        earned = "50 Main Coin"
+        reward = blockchain.get_main_coin_reward(miner_address)
+        if reward <= 0.0 or blockchain.get_total_mined("MAIN") >= blockchain.get_effective_max_supply(miner_address):
+            return jsonify({'message': 'Main coin supply cap reached! Power is 0.'}), 400
+        
+        blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type="MAIN")
+        earned = f"{reward} Main Coin (Power: {blockchain.get_node_power('MAIN', miner_address)})"
     elif selected_coin == "ALT":
         reward = blockchain.get_alt_coin_reward()
         blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type=blockchain.sub_coin_name)
-        earned = f"{reward} Shield Coin"
+        earned = f"{reward} Shield Coin (Power: {blockchain.get_node_power('ALT')})"
     else:
         return jsonify({'error': 'Invalid asset selection!'}), 400
 
@@ -472,7 +496,7 @@ def protocol_action():
             else:
                 message = "[GLOBAL] Global price dynamics are driven algorithmically by supply, demand, and chain volume."
 
-    impact_pct = max(1, min(99, int(round(impact * 100))))
+    impact_pct = max(0.000001, min(99.0, round(impact * 99.0, 6)))
     return jsonify({
         'status': 'Success',
         'action_result': message,
@@ -487,7 +511,7 @@ def full_chain():
     user_address = request.args.get('address', 'Unknown_User')
     total_alt_mined = blockchain.get_total_mined(blockchain.sub_coin_name)
     burned_alt = blockchain.get_balance(blockchain.BURN_ADDRESS, blockchain.sub_coin_name, False)
-    impact_pct = max(1, min(99, int(round(blockchain.get_alt_impact_power() * 100))))
+    impact_pct = max(0.000001, min(99.0, round(blockchain.get_alt_impact_power() * 99.0, 6)))
     
     return jsonify({
         '1_GLOBAL_DATA': {
@@ -501,7 +525,9 @@ def full_chain():
         '2_USER_DATA': {
             'wallet_address': user_address, 
             'personal_effective_price': f"{blockchain.get_effective_price(user_address)}$", 
-            'impact_power': f"{impact_pct}%"
+            'impact_power': f"{impact_pct}%",
+            'node_power_main': blockchain.get_node_power("MAIN", user_address),
+            'node_power_shield': blockchain.get_node_power("ALT")
         },
         'chain_data': list(blockchain.chain_space.values())
     }), 200
