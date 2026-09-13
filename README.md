@@ -1,82 +1,37 @@
-**VARIABLE COIN PROTOCOL**
+### 1. Infinite Space Allocation & The 1% – 99% Boundary Rule
 
-**Distributed Data Matrix, Anti-Inflationary Architecture & Complete Mining Guide**
-
----
-
-**OVERVIEW**
-
-Variable Coin Protocol is an algorithmic digital asset ecosystem designed to eliminate market volatility, defeat inflation, and provide infinite decentralized storage. The network balances valuation through a dual-token stabilizing mechanism and a probabilistic storage matrix.
+* **Infinite Space Allocation Architecture:** The protocol operates across an infinite number of algorithmically defined spaces (locations), removing physical hardware limits. Data processing, storage, and validation are distributed seamlessly across these infinite locations.
+* **The Absolute 1% Floor:** Every single space in the network must occupy a minimum share of **1%**. No space can ever drop to 0%, ensuring there are no dead, non-responsive, or inert points in the system.
+* **The Absolute 99% Ceiling:** No individual space can ever monopolize the network; the maximum capacity share any single space can hold is capped at **99%** (`(hash % 99) + 1`). This mathematical ceiling makes 100% control, monopolies, or central choke points impossible.
+* **Transformation of Proof-of-Work:** Classical PoW is transformed from an energy-wasting hash lottery into a verification engine for these infinite spaces. When miners solve a block, the cryptographic proof confirms and distributes data across these spaces bounded strictly between 1% and 99%.
 
 ---
 
-**1. INFINITE STORAGE AND RANDOM MATRIX (1% - 100%)**
+### 2. Data Retention & Distribution Affinity (Data Affinity)
 
-* **Infinite Storage Capacity:** The architecture supports an infinite network of decentralized storage nodes without capacity limits.
-* **Random Percentage Dispersion:** Stored data is split and dispersed dynamically across nodes using random probabilistic weights between 1% and 100%.
-* **Decentralized Security:** Random fragment allocation ensures data integrity and prevents single points of failure across the global network.
-
----
-
-**2. SECONDARY REGULATOR COIN: IMPACT FACTOR AND DIFFICULTY**
-
-* **Infinite Supply Mechanism:** The secondary coin operates without a rigid ceiling, providing infinite elasticity to restore market equilibrium.
-* **Impact Factor:** Transactions and burns of the secondary coin generate an impact coefficient that adjusts network variables and stabilizes baseline value.
-* **Dynamic Network Difficulty:** Algorithmic difficulty scales automatically based on market variance to regulate generation velocity.
+* **Deterministic Matching:** When a block is minted, its block hash is cryptographically combined with the specific space identifier to generate an **affinity score** between 1 and 99.
+* **Storage Condition:** If the calculated affinity score is less than or equal to the capacity percentage of that space (1% - 99%), the data is permanently retained and preserved in that space.
+* **Zero-Loss Resilience:** Because data is dispersed across infinite spaces using probabilistic rules, physical server or hardware failures cannot destroy information. Network integrity is fully sustained through the remaining spaces.
 
 ---
 
-**3. ANTI-INFLATION WALL AND PRICE STABILIZATION**
+### 3. Helper Token (Shield): Inflation Shield & Value Stabilization
 
-* **Price Pegging Target:** The primary mission is shielding user assets from speculative dumping and inflation.
-* **Automated Price Defense:** Sell pressure automatically triggers the secondary coin's impact factor. By adjusting minting volume, burning rates, and difficulty, the protocol defends and locks the target baseline price.
-
----
-
-**4. HOW TO MINE VARIABLE COIN VIA COMMAND LINE**
-
-* **Step 1: Hardware Setup**
-Standard multi-core CPU or GPU with at least 4 GB RAM and stable internet connectivity.
-
-* **Step 2: Clone and Setup**
-git clone https://github.com/marianakamatotzs23-gif/veriable2.git
-cd veriable2
-pip install flask gunicorn requests
-
-* **Step 3: Launch Node Miner**
-python3 veriable2.py --mine
+* **Dual Functional Division:** While Main Coin serves as a store of value bounded by a 21,000,000 hard cap, Shield Coin functions as an elastic governance fuel used to counteract market fluctuations.
+* **Pegging Asset Value (Peg Price):** During market downturns or heavy sell pressure, users can burn Shield Coins to anchor the effective price at a baseline floor, shielding purchasing power from erosion.
+* **Value Boosting (Boost Value):** Users can deploy Shield Coin impact power to scale their effective asset value above the spot market rate, establishing an active personal defense against fiat inflation.
+* **Permanent Burn & Supply Contraction:** Triggering these stabilization mechanisms routes all spent Shield Coins directly to the irreversible burn address (`0x000000000000000000000000000000000000dEaD`). Burned tokens are permanently removed from circulation, and these actions can be used to destroy circulating Main Coins to accelerate systemic scarcity.
 
 ---
 
-**5. HOW TO VISIT THE WEBSITE AND MINE ONLINE (VERIABLE2.COM)**
+### 4. Node Power & Dual Mining Mathematics
 
-Users can participate in mining directly through the official web portal without complex local server configurations:
-
-* **Step 1: Access the Portal**
-Open your web browser and navigate to:
-https://veriable2.com
-
-* **Step 2: Connect Your Wallet or Enter Address**
-On the main command dashboard, enter your wallet public address into the miner authorization field.
-
-* **Step 3: Select Mining Intensity**
-Choose your desired verification load to balance processor allocation and block calculation speed.
-
-* **Step 4: Start Web Mining**
-Click the "Start Mining" button. Your browser will immediately begin calculating hash blocks and verifying random data dispersion percentages (1% - 100%). Rewards in Variable Coin and secondary stabilizer tokens are credited directly to your connected address upon block verification.
-
----
-
-**6. SERVER DEPLOYMENT**
-
-* Clone repository:
-git clone https://github.com/marianakamatotzs23-gif/veriable2.git
-
-* Enter directory:
-cd veriable2
-
-* Install dependencies:
-pip install flask gunicorn
-
-* Launch application:
-python3 veriable2.py
+* **Universal 99.0 Base Power:** Abstract mining units across all infinite spaces start with a maximum base operational power of **99.0**.
+* **Main Coin Mining (99 $\to$ 0 Decay):**
+  * Initial blocks grant a full reward of **50 coins** at 99 power.
+  * As the 21,000,000 supply cap approaches, power decays linearly (99 $\to$ 80 $\to$ 50 $\to$ 1...). Mining rewards decrease proportionally.
+  * Upon minting the 21,000,000th coin, power hits exactly **0.0**, terminating block rewards and permanently halting all future issuance.
+* **Shield Coin Mining (99 $\to$ 0.000001 Asymptotic Floor):**
+  * The helper token is never fully exhausted; power decays gradually as cumulative mining and burning volume rises.
+  * Power never reaches zero; it asymptotically locks at a floor of **0.000001**.
+  * This permanent baseline ensures the network never freezes, allowing participants to continuously mine micro-fractions of Shield Coin to trigger governance commands and protect against inflation indefinitely.
