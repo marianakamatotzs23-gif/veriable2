@@ -1,24 +1,15 @@
 import hashlib
 import json
+import os
 import sys
 import math
-from time import time, sleep
-from urllib.parse import urlparse
-import requests
+from time import time
 from flask import Flask, jsonify, request, render_template
 import ecdsa
 import threading
 import secrets
 
-def calculate_node_capacity(node_id):
-    hash_value = int(hashlib.md5(str(node_id).encode('utf-8')).hexdigest(), 16)
-    return (hash_value % 99) + 1
-
-def verify_data_affinity(node_id, node_capacity, data_summary):
-    pair_combination = f"{node_id}_{data_summary}"
-    affinity_score = int(hashlib.md5(pair_combination.encode('utf-8')).hexdigest(), 16)
-    score_percentage = (affinity_score % 99) + 1
-    return score_percentage <= node_capacity
+STORAGE_FILE = "chain_storage.json"
 
 WORD_LIST = [
     "apple", "river", "mountain", "token", "coin", "node", "block", "chain", 
@@ -54,171 +45,184 @@ def verify_key_match(private_key_hex, public_key_hex):
     except Exception:
         return False
 
+
+class InfiniteVariableSearchEngine:
+    @staticmethod
+    def search_infinite_variables(seed_identifier, mining_difficulty, coin_type="MAIN"):
+        attempts = 0
+        max_attempts = 350000 if coin_type == "MAIN" else 450000
+        
+        while attempts < max_attempts:
+            attempts += 1
+            var_seed = f"{seed_identifier}_{attempts}"
+            var_hash = hashlib.sha256(var_seed.encode('utf-8')).hexdigest()
+            val = int(hashlib.md5(var_hash.encode('utf-8')).hexdigest(), 16)
+            
+            scale_val = (val % 99000000) / 1000000.0
+            
+            if scale_val <= mining_difficulty or attempts >= max_attempts:
+                return var_hash, attempts, scale_val
+                
+        return "0x0", attempts, mining_difficulty
+
+
+class VariableStorageEngine:
+    def __init__(self):
+        self.main_block_lookup = {}
+        self.alt_block_lookup = {}
+
+    def allocate_block(self, block, coin_type="MAIN"):
+        if coin_type == "MAIN":
+            self.main_block_lookup[block['index']] = block
+        else:
+            self.alt_block_lookup[block['index']] = block
+
+    def to_dict(self):
+        return {
+            "main_block_lookup": self.main_block_lookup,
+            "alt_block_lookup": self.alt_block_lookup
+        }
+
+    def load_from_dict(self, data):
+        self.main_block_lookup = {int(k): v for k, v in data.get("main_block_lookup", {}).items()}
+        self.alt_block_lookup = {int(k): v for k, v in data.get("alt_block_lookup", {}).items()}
+
+
 class Blockchain(object):
     def __init__(self):
-        self.current_transactions = []
+        self.current_main_transactions = []
+        self.current_alt_transactions = []
         self.BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD"
         self.lock = threading.Lock()
         
-        self.chain_space = {} 
-        self.connected_nodes = set()
-
-        random_suffix = secrets.randbelow(1000000000)
-        self.node_id = f"Node_{random_suffix}"
-        self.storage_capacity = calculate_node_capacity(self.node_id)
+        self.storage = VariableStorageEngine()
         
-        self.target_price = 0.0
         self.BASE_MAX_MAIN = 21000000
-        self.BASE_MAIN_REWARD = 50.0
-        self.sub_coin_name = "SHIELD_COIN"
-        self.supply_variance_limit = 1000000
+        self.BASE_MAIN_REWARD = 50
         self.dynamic_supply_offset = 0
+        self.supply_variance_limit = 5000000
         self.burned_main_coins = 0
         
-        self.difficulty_offset = 0
-        self.difficulty_blocks_left = 0
+        self.sub_coin_name = "SHIELD_COIN"
+        
+        self.market_boost_bonus = 0.0
+        self.market_peg_active = False
         self.user_stats = {}  
 
-        if not self.chain_space:
-            self.mint_block(proof=100, difficulty=4, previous_hash='1', force_catch=True)
+        self.load_from_disk()
+
+        if not self.storage.main_block_lookup:
+            self.mint_block(proof=100, coin_type="MAIN", previous_hash='1')
             
-        self.start_background_sync()
+        if not self.storage.alt_block_lookup:
+            self.mint_block(proof=100, coin_type="ALT", previous_hash='1')
 
-    def register_node(self, address):
-        parsed_url = urlparse(address)
-        netloc = parsed_url.netloc if parsed_url.netloc else parsed_url.path
-        if netloc:
-            with self.lock:
-                self.connected_nodes.add(netloc)
+    def save_to_disk(self):
+        try:
+            with open(STORAGE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.storage.to_dict(), f, indent=2)
+        except Exception as e:
+            print(f"Disk save error: {e}")
 
-    @property
-    def nodes(self):
-        return list(self.connected_nodes)
+    def load_from_disk(self):
+        if os.path.exists(STORAGE_FILE):
+            try:
+                with open(STORAGE_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    self.storage.load_from_dict(data)
+            except Exception as e:
+                print(f"Disk load error: {e}")
 
-    def store_block(self, block, force_catch=False):
-        data_summary = block.get('hash', str(block['index']))
-        with self.lock:
-            if block['index'] not in self.chain_space:
-                if force_catch or verify_data_affinity(self.node_id, self.storage_capacity, data_summary) or block['index'] == 1:
-                    self.chain_space[block['index']] = block
-
-    def sync_chain_data(self):
-        while True:
-            sleep(20)
-            for node in list(self.connected_nodes):
-                try:
-                    res_nodes = requests.get(f'http://{node}/nodes/list', timeout=3)
-                    if res_nodes.status_code == 200:
-                        for peer in res_nodes.json().get('nodes', []):
-                            self.register_node(peer)
-                            
-                    res = requests.get(f'http://{node}/space/fragments', timeout=3)
-                    if res.status_code == 200:
-                        for block in res.json().get('chain_blocks', []):
-                            self.store_block(block)
-                except Exception:
-                    pass
-
-    def start_background_sync(self):
-        threading.Thread(target=self.sync_chain_data, daemon=True).start()
-
-    def get_chain_length(self):
-        if not self.chain_space:
+    def get_chain_length(self, coin_type="MAIN"):
+        lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
+        if not lookup:
             return 0
-        return max(self.chain_space.keys())
+        return max(lookup.keys())
 
-    @property
-    def last_block(self):
-        if not self.chain_space:
+    def get_last_block(self, coin_type="MAIN"):
+        length = self.get_chain_length(coin_type)
+        if length == 0:
             return None
-        return self.chain_space[self.get_chain_length()]
+        lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
+        return lookup.get(length)
 
-    def mint_block(self, proof, difficulty, previous_hash=None, force_catch=False):
+    def mint_block(self, proof, coin_type="MAIN", previous_hash=None):
         with self.lock:
-            last = self.last_block
+            last = self.get_last_block(coin_type)
             prev_hash = previous_hash or (self.hash(last) if last else '1')
+            txs = self.current_main_transactions if coin_type == "MAIN" else self.current_alt_transactions
             
             block = {
                 'index': (last['index'] + 1) if last else 1,
-                'timestamp': time(),
-                'transactions': self.current_transactions,
+                'timestamp': int(time()),
+                'transactions': txs,
                 'proof': proof,
-                'difficulty': difficulty,
                 'previous_hash': prev_hash,
+                'coin_type': coin_type
             }
             block['hash'] = self.hash(block)
-            self.current_transactions = []
             
-        self.store_block(block, force_catch=force_catch)
-        threading.Thread(target=self.broadcast_block, args=(block,), daemon=True).start()
+            if coin_type == "MAIN":
+                self.current_main_transactions = []
+            else:
+                self.current_alt_transactions = []
+            
+        self.storage.allocate_block(block, coin_type)
+        self.save_to_disk()
         return block
 
-    def broadcast_block(self, block):
-        for node in list(self.connected_nodes):
-            try:
-                requests.post(f'http://{node}/space/broadcast', json=block, timeout=2)
-            except Exception:
-                pass
-
     def new_transaction(self, sender, recipient, amount, coin_type="MAIN"):
-        if not isinstance(amount, (int, float)) or amount <= 0:
-            return False, "Invalid amount!"
+        try:
+            amount = int(float(amount))
+        except Exception:
+            return False, "Invalid amount parameter"
+            
+        if amount <= 0:
+            return False, "Amount must be strictly greater than zero"
+            
         with self.lock:
             if sender != "0" and self.get_balance(sender, coin_type, True) < amount:
-                return False, "Insufficient balance!"
-            self.current_transactions.append({
+                return False, "Insufficient balance"
+            
+            target_txs = self.current_main_transactions if coin_type == "MAIN" else self.current_alt_transactions
+            target_txs.append({
                 'sender': sender,
                 'recipient': recipient,
                 'amount': amount,
                 'coin_type': coin_type
             })
-            return True, self.get_chain_length() + 1
+            return True, self.get_chain_length(coin_type) + 1
 
     @staticmethod
     def hash(block):
         block_copy = {k: v for k, v in block.items() if k != 'hash'}
         return hashlib.sha256(json.dumps(block_copy, sort_keys=True).encode()).hexdigest()
 
-    def proof_of_work(self, last_block, difficulty):
-        last_proof = last_block['proof'] if last_block else 100
-        last_hash = self.hash(last_block) if last_block else '1'
-        proof = 0
-        while self.valid_proof(last_proof, proof, last_hash, difficulty) is False:
-            proof += 1
-        return proof
-
-    @staticmethod
-    def valid_proof(last_proof, proof, last_hash, difficulty):
-        guess = f'{last_proof}{proof}{last_hash}'.encode()
-        guess_hash = hashlib.sha256(guess).hexdigest()
-        return guess_hash[:difficulty] == "0" * difficulty
-
     def get_user_stats(self, address):
         if address not in self.user_stats:
             self.user_stats[address] = {
-                'price_mode': 'STABILIZE', 
-                'active_price_shift': 0.0, 
-                'diff_offset': 0, 
-                'diff_blocks_left': 0, 
-                'personal_supply_offset': 0, 
-                'personal_burned': 0
+                'personal_supply_offset': 0,
+                'personal_burned': 0,
+                'personal_boost': 0.0
             }
         return self.user_stats[address]
 
     def get_balance(self, address, coin_type="MAIN", include_pending=True):
         balance = 0
-        for block in self.chain_space.values():
+        lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
+        for block in lookup.values():
             for tx in block['transactions']:
                 if tx.get('coin_type', 'MAIN') == coin_type:
                     if tx['sender'] == address:
-                        balance -= tx['amount']
+                        balance -= int(tx['amount'])
                     if tx['recipient'] == address:
-                        balance += tx['amount']
+                        balance += int(tx['amount'])
         if include_pending:
-            for tx in self.current_transactions:
-                if tx.get('coin_type', 'MAIN') == coin_type and tx['sender'] == address:
-                    balance -= tx['amount']
-        return balance
+            pending_txs = self.current_main_transactions if coin_type == "MAIN" else self.current_alt_transactions
+            for tx in pending_txs:
+                if tx['sender'] == address:
+                    balance -= int(tx['amount'])
+        return int(balance)
 
     def get_effective_max_supply(self, address=None):
         base = (self.BASE_MAX_MAIN + self.dynamic_supply_offset) - self.burned_main_coins
@@ -226,100 +230,74 @@ class Blockchain(object):
             stats = self.get_user_stats(address)
             base += stats['personal_supply_offset']
             base -= stats['personal_burned']
-        return base
+        return int(base)
 
     def get_total_mined(self, coin_type="MAIN"):
         total = 0
-        for block in self.chain_space.values():
+        lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
+        for block in lookup.values():
             for tx in block['transactions']:
                 if tx.get('coin_type', 'MAIN') == coin_type and tx['sender'] == "0":
-                    total += tx['amount']
-        return total
+                    total += int(tx['amount'])
+        return int(total)
 
-    def get_node_power(self, coin_type="MAIN", address=None):
-        if coin_type == "MAIN":
-            total_mined = self.get_total_mined("MAIN")
-            max_limit = self.get_effective_max_supply(address)
-            if total_mined >= max_limit:
-                return 0.0
-            progress = total_mined / max_limit
-            power = 99.0 * (1.0 - progress)
-            return max(0.0, round(power, 6))
-        else:
-            alt_mined = self.get_total_mined(self.sub_coin_name)
-            alt_burned = self.get_balance(self.BURN_ADDRESS, self.sub_coin_name, False)
-            total_activity = alt_mined + alt_burned
-            decay_factor = 1.0 + (total_activity / 5000.0)
-            power = 99.0 / decay_factor
-            return max(0.000001, round(power, 8))
-
-    def get_main_coin_reward(self, address=None):
-        power = self.get_node_power("MAIN", address)
-        if power <= 0.0:
-            return 0.0
-        reward = self.BASE_MAIN_REWARD * (power / 99.0)
-        return max(0.000001, round(reward, 6))
-
-    def get_alt_coin_reward(self):
-        power = self.get_node_power(self.sub_coin_name)
-        return max(0.000001, round(power * 0.05, 6))
-
-    def get_alt_impact_power(self):
-        return max(0.000001 / 99.0, min(1.0, self.get_node_power(self.sub_coin_name) / 99.0))
-
-    def get_difficulty(self, coin_type="MAIN", address=None):
-        total_blocks = self.get_chain_length()
-        if coin_type == "MAIN":
-            if total_blocks < 200: base = 4
-            elif total_blocks < 1000: base = 5
-            elif total_blocks < 5000: base = 6
-            else: base = 7
-            
-            global_off = self.difficulty_offset if self.difficulty_blocks_left > 0 else 0
-            personal_off = self.get_user_stats(address)['diff_offset'] if address and self.get_user_stats(address)['diff_blocks_left'] > 0 else 0
-            return max(1, base + global_off + personal_off)
-        else:
-            return min(10, 4 + int(self.get_total_mined(self.sub_coin_name) / 300))
-
-    @property
-    def market_price(self):
+    # --- MINING DIFFICULTY (COMPLETELY SEPARATE FROM IMPACT) ---
+    def get_mining_power_main(self, address=None):
         total_mined = self.get_total_mined("MAIN")
-        total_blocks = self.get_chain_length()
-
-        if total_mined == 0 or total_blocks <= 1:
+        max_limit = self.get_effective_max_supply(address)
+        if total_mined >= max_limit:
             return 0.0
+        progress = min(1.0, total_mined / float(max_limit))
+        power = 99.0 * (1.0 - progress)
+        return max(0.000001, round(power, 6))
 
-        activity = (total_blocks - 1) + len(self.current_transactions)
-        demand_factor = math.log(activity + 1, 2) * 0.15
-
-        burned = self.burned_main_coins
-        circulating = max(1, total_mined - burned)
-        scarcity_factor = 1.0 + (burned / circulating) * 2.0
-
-        current_diff = self.get_difficulty("MAIN")
-        difficulty_weight = (current_diff - 3) * 0.20
-
-        shield_burned = self.get_balance(self.BURN_ADDRESS, self.sub_coin_name, False)
-        protocol_burn_pressure = math.sqrt(shield_burned) * 0.05
-
-        computed_price = demand_factor * scarcity_factor * (difficulty_weight + protocol_burn_pressure)
-        return round(max(0.0, computed_price), 2)
-
-    def get_effective_price(self, address):
-        base_market = self.market_price
-        if base_market == 0.0:
-            return 0.0
-
-        impact = self.get_alt_impact_power()
-        stats = self.get_user_stats(address)
+    def get_mining_power_shield(self, address=None):
+        shield_mined = self.get_total_mined(self.sub_coin_name)
+        max_limit = self.get_effective_max_supply(address)
         
-        if stats['price_mode'] == "STABILIZE":
-            return round(self.target_price + ((base_market - self.target_price) / (1.0 + (impact * 0.5))), 2)
-        elif stats['price_mode'] == "BOOST":
-            return round(base_market * (1.0 + (stats['active_price_shift'] * impact * 0.02)), 2)
-        elif stats['price_mode'] == "DISCOUNT":
-            return round(base_market * (1.0 - min(0.6, (stats['active_price_shift'] * impact * 0.015))), 2)
-        return round(base_market, 2)
+        # Shield Mining Difficulty drops 7x faster than Main Mining Difficulty
+        equivalent_progress = (shield_mined * 7.0) / float(max_limit)
+        progress = min(0.999999, equivalent_progress)
+        power = 99.0 * (1.0 - progress)
+        return max(0.000000001, round(power, 9))
+
+    # --- PROTOCOL IMPACT POWER (ONLY FOR SHIELD UTILITY, FASTER INITIAL DROP) ---
+    def get_shield_impact_power(self):
+        alt_mined = self.get_total_mined(self.sub_coin_name)
+        if alt_mined <= 1:
+            return 99.0
+            
+        # Refined Impact Curve:
+        # 1 to 10: Drops instantly from 99 to 95 (Very fast)
+        # 10 to 100: Drops from 95 to 70 (Fast)
+        # 100 to 300: Drops from 70 to 50 (Slowing down)
+        # 300 to 800: Drops from 50 to 40 (Slow)
+        # 800 to 2000: Drops from 40 to 20 (Very slow)
+        # 2000 to 5000: Drops from 20 to 10 (Extremely slow)
+        # 5000+: Slowly grinds to 1 (Near halt)
+        
+        if alt_mined <= 10:
+            power = 99.0 - (alt_mined / 10.0) * 4.0
+        elif alt_mined <= 100:
+            power = 95.0 - ((alt_mined - 10) / 90.0) * 25.0
+        elif alt_mined <= 300:
+            power = 70.0 - ((alt_mined - 100) / 200.0) * 20.0
+        elif alt_mined <= 800:
+            power = 50.0 - ((alt_mined - 300) / 500.0) * 10.0
+        elif alt_mined <= 2000:
+            power = 40.0 - ((alt_mined - 800) / 1200.0) * 20.0
+        elif alt_mined <= 5000:
+            power = 20.0 - ((alt_mined - 2000) / 3000.0) * 10.0
+        else:
+            decay = (alt_mined - 5000) / 25000.0
+            power = 10.0 - (decay * 9.0)
+            
+        return max(0.000000001, round(power, 9))
+
+    def get_alt_impact_power_percentage(self):
+        power = self.get_shield_impact_power()
+        impact = power / 99.0
+        return max(0.000000001, round(impact, 12))
 
 app = Flask(__name__)
 app.json.ensure_ascii = False
@@ -337,75 +315,59 @@ def new_wallet():
 def recover_wallet():
     mnemonic = request.get_json().get('mnemonic', '')
     if not mnemonic or len(mnemonic.split()) < 12:
-        return jsonify({'error': 'Invalid 12-word seed phrase!'}), 400
+        return jsonify({'error': 'Invalid 12-word seed phrase'}), 400
     priv, pub = wallet_from_mnemonic(mnemonic)
     return jsonify({'private_key': priv, 'public_key': pub}), 200
-
-@app.route('/nodes/register', methods=['POST'])
-def register_nodes():
-    nodes = request.get_json().get('nodes', [])
-    if not nodes:
-        return jsonify({'error': 'Error: Please supply a valid list of nodes'}), 400
-    for node in nodes:
-        blockchain.register_node(node)
-    return jsonify({'message': 'New nodes have been added', 'total_nodes': blockchain.nodes}), 201
-
-@app.route('/nodes/list', methods=['GET'])
-def list_nodes():
-    return jsonify({'nodes': blockchain.nodes}), 200
-
-@app.route('/space/fragments', methods=['GET'])
-def send_fragments():
-    return jsonify({
-        'node_id': blockchain.node_id,
-        'storage_capacity': f"%{blockchain.storage_capacity}",
-        'chain_blocks': list(blockchain.chain_space.values())
-    }), 200
-
-@app.route('/space/broadcast', methods=['POST'])
-def receive_broadcast():
-    blockchain.store_block(request.get_json())
-    return jsonify({'message': 'Data packet broadcasted and verified by node filters.'}), 200
 
 @app.route('/mine', methods=['GET'])
 def mine():
     miner_address = request.args.get('address')
     selected_coin = request.args.get('coin', default='MAIN').upper()
     if not miner_address or len(miner_address) < 20:
-        return jsonify({'error': 'Invalid miner address!'}), 400
+        return jsonify({'error': 'Invalid miner address'}), 400
 
-    difficulty = blockchain.get_difficulty(coin_type=selected_coin, address=miner_address)
+    coin_type_key = blockchain.sub_coin_name if selected_coin == "ALT" else "MAIN"
+    last_block = blockchain.get_last_block(coin_type_key)
+    next_index = (last_block['index'] + 1) if last_block else 1
 
-    if selected_coin == "MAIN":
-        reward = blockchain.get_main_coin_reward(miner_address)
-        if reward <= 0.0 or blockchain.get_total_mined("MAIN") >= blockchain.get_effective_max_supply(miner_address):
-            return jsonify({'message': 'Main coin supply cap reached! Power is 0.'}), 400
-        
-        blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type="MAIN")
-        earned = f"{reward} Main Coin (Power: {blockchain.get_node_power('MAIN', miner_address)})"
-    elif selected_coin == "ALT":
-        reward = blockchain.get_alt_coin_reward()
-        blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type=blockchain.sub_coin_name)
-        earned = f"{reward} Shield Coin (Power: {blockchain.get_node_power('ALT')})"
+    if coin_type_key == "MAIN":
+        mining_difficulty = blockchain.get_mining_power_main(miner_address)
+        target_power = mining_difficulty
+        if mining_difficulty <= 0.0 or blockchain.get_total_mined("MAIN") >= blockchain.get_effective_max_supply(miner_address):
+            return jsonify({'message': 'Main coin supply cap reached.'}), 400
     else:
-        return jsonify({'error': 'Invalid asset selection!'}), 400
+        mining_difficulty = blockchain.get_mining_power_shield(miner_address)
+        target_power = blockchain.get_shield_impact_power()
 
-    last_block = blockchain.last_block
-    proof = blockchain.proof_of_work(last_block, difficulty)
-    
+    # Matrix search uses purely the MINING DIFFICULTY
+    var_hash, attempts, resolved_val = InfiniteVariableSearchEngine.search_infinite_variables(
+        f"infinite_search_{coin_type_key}_{miner_address}_{next_index}", 
+        mining_difficulty,
+        coin_type=coin_type_key
+    )
+
+    if coin_type_key == "MAIN":
+        reward = max(1, int(blockchain.BASE_MAIN_REWARD * max(0.01, mining_difficulty / 99.0)))
+        blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type="MAIN")
+        earned = f"{reward} Main Coin (Target Power: {target_power} | Mining Attempts: {attempts})"
+    else:
+        reward = 1 
+        blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type=blockchain.sub_coin_name)
+        # Logging separates Mining Difficulty vs Impact Power for clarity
+        earned = f"{reward} Shield Coin (Mining Difficulty Power: {mining_difficulty} | Protocol Impact Power: {target_power} | Matrix Attempts: {attempts})"
+
     block = blockchain.mint_block(
-        proof, 
-        difficulty, 
+        proof=attempts, 
+        coin_type=coin_type_key,
         previous_hash=blockchain.hash(last_block) if last_block else '1'
     )
 
     return jsonify({
         'status': 'Success',
         'earned': earned,
-        'difficulty_solved': f"{difficulty} Leading Zeros",
-        'market_price': f"{blockchain.market_price}$",
-        'effective_price_for_you': f"{blockchain.get_effective_price(miner_address)}$",
-        'block_index': block['index']
+        'mining_attempts': attempts,
+        'block_index': block['index'],
+        'chain_type': coin_type_key
     }), 200
 
 @app.route('/protocol/act', methods=['POST'])
@@ -413,24 +375,34 @@ def protocol_action():
     data = request.get_json()
     address = data.get('address')
     private_key = data.get('private_key')
-    alt_amount = data.get('alt_amount', 0)
-    category = data.get('category')
     action = data.get('action')
     scope = data.get('scope', 'personal')
 
     if not address or not private_key or not verify_key_match(private_key, address):
-        return jsonify({'error': 'ACCESS DENIED!'}), 403
+        return jsonify({'error': 'Access denied: Key verification failure'}), 403
 
-    try:
-        alt_amount = float(alt_amount)
-    except ValueError:
-        return jsonify({'error': 'Amount must be numeric!'}), 400
+    user_balance = blockchain.get_balance(address, blockchain.sub_coin_name, True)
 
-    if alt_amount <= 0 or blockchain.get_balance(address, blockchain.sub_coin_name, True) < alt_amount:
-        return jsonify({'error': 'Insufficient balance or invalid amount!'}), 400
+    alt_percentage = data.get('alt_percentage')
+    if alt_percentage is not None:
+        try:
+            alt_percentage = float(alt_percentage)
+        except ValueError:
+            return jsonify({'error': 'Percentage must be numeric'}), 400
+        if alt_percentage <= 0 or alt_percentage > 100:
+            return jsonify({'error': 'Percentage must be between 1 and 100'}), 400
+        alt_amount = int((user_balance * alt_percentage) / 100.0)
+    else:
+        try:
+            alt_amount = int(float(data.get('alt_amount', 0)))
+        except ValueError:
+            return jsonify({'error': 'Amount must be numeric'}), 400
 
-    impact = blockchain.get_alt_impact_power()
-    effective_power = alt_amount * impact
+    if alt_amount <= 0 or user_balance < alt_amount:
+        return jsonify({'error': 'Insufficient balance or invalid token quantity'}), 400
+
+    impact_multiplier = blockchain.get_alt_impact_power_percentage()
+    effective_power = alt_amount * impact_multiplier
 
     success, msg = blockchain.new_transaction(
         sender=address, 
@@ -445,65 +417,58 @@ def protocol_action():
     message = ""
 
     with blockchain.lock:
-        if category == "supply":
+        if action == "burn_main":
+            burned_qty = max(1, int(effective_power * 100))
             if scope == "global":
-                if action == "burn_main":
-                    burned_qty = int(effective_power * 100)
-                    blockchain.burned_main_coins += burned_qty
-                    message = f"[GLOBAL] {alt_amount} Shield burned. {burned_qty} Main Coins destroyed globally."
-                elif action == "expand_supply":
-                    delta = int(effective_power * 150)
-                    blockchain.dynamic_supply_offset = min(blockchain.supply_variance_limit, blockchain.dynamic_supply_offset + delta)
-                    message = f"[GLOBAL] Main coin supply cap expanded by {delta} globally."
+                blockchain.burned_main_coins += burned_qty
+                message = f"[GLOBAL] Supply burned: {burned_qty} Main units removed globally"
             else:
-                if action == "burn_main":
-                    burned_qty = int(effective_power * 100)
-                    stats['personal_burned'] += burned_qty
-                    message = f"[PERSONAL] {alt_amount} Shield burned. {burned_qty} Main Coins destroyed in your scope."
-                elif action == "expand_supply":
-                    delta = int(effective_power * 150)
-                    stats['personal_supply_offset'] += delta
-                    message = f"[PERSONAL] Your personal supply cap expanded by {delta}."
+                stats['personal_burned'] += burned_qty
+                message = f"[PERSONAL] Supply burned: {burned_qty} Main units deducted from personal quota"
 
-        elif category == "difficulty":
-            blocks_granted = max(1, int(effective_power * 2))
+        elif action == "expand_supply":
+            expand_qty = max(1, int(effective_power * 150))
             if scope == "global":
-                if action == "ease":
-                    blockchain.difficulty_offset = -1
-                elif action == "tighten":
-                    blockchain.difficulty_offset = 1
-                blockchain.difficulty_blocks_left += blocks_granted
-                message = f"[GLOBAL] Network difficulty updated for {blocks_granted} blocks."
+                blockchain.dynamic_supply_offset = min(blockchain.supply_variance_limit, blockchain.dynamic_supply_offset + expand_qty)
+                message = f"[GLOBAL] Capacity expanded: Global limit extended by +{expand_qty}"
             else:
-                if action == "ease":
-                    stats['diff_offset'] = -1
-                elif action == "tighten":
-                    stats['diff_offset'] = 1
-                stats['diff_blocks_left'] += blocks_granted
-                message = f"[PERSONAL] Personal difficulty updated for {blocks_granted} blocks."
+                stats['personal_supply_offset'] += expand_qty
+                message = f"[PERSONAL] Capacity expanded: Personal limit extended by +{expand_qty}"
 
-        elif category == "price":
-            if scope == "personal":
-                if action == "stabilize":
-                    stats['price_mode'] = "STABILIZE"
-                elif action == "boost":
-                    stats['price_mode'] = "BOOST"
-                    stats['active_price_shift'] += round(effective_power * 0.1, 2)
-                elif action == "discount":
-                    stats['price_mode'] = "DISCOUNT"
-                    stats['active_price_shift'] += round(effective_power * 0.1, 2)
-                message = "[PERSONAL] Personal effective price modified."
+        elif action == "boost_price":
+            boost_val = round(min(5.0, effective_power * 0.5), 2)
+            if scope == "global":
+                blockchain.market_boost_bonus = boost_val
+                message = f"[GLOBAL] Dynamic coefficient adjusted upwards by +{boost_val}%"
             else:
-                message = "[GLOBAL] Global price dynamics are driven algorithmically by supply, demand, and chain volume."
+                stats['personal_boost'] = boost_val
+                message = f"[PERSONAL] Wallet dynamic coefficient boosted by +{boost_val}%"
 
-    impact_pct = max(0.000001, min(99.0, round(impact * 99.0, 6)))
+        elif action == "discount_price":
+            reduction_val = round(min(5.0, effective_power * 0.5), 2)
+            if scope == "global":
+                blockchain.market_boost_bonus = -reduction_val
+                message = f"[GLOBAL] Discount mode active: Adjusted by -{reduction_val}%"
+            else:
+                stats['personal_boost'] = -reduction_val
+                message = f"[PERSONAL] Wallet discount applied: -{reduction_val}%"
+
+        elif action == "peg_static":
+            if scope == "global":
+                blockchain.market_peg_active = True
+                blockchain.market_boost_bonus = 0.0
+                message = "[GLOBAL] Reference valuation locked and pegged"
+            else:
+                stats['personal_boost'] = 0.0
+                message = "[PERSONAL] Wallet parameters pegged and stabilized"
+
+    impact_pct = round(impact_multiplier * 99.0, 9)
     return jsonify({
         'status': 'Success',
         'action_result': message,
         'burned_shield': alt_amount,
-        'current_impact_power': f"{impact_pct}%",
-        'your_effective_price': f"{blockchain.get_effective_price(address)}$",
-        'global_market_price': f"{blockchain.market_price}$"
+        'remaining_shield_balance': blockchain.get_balance(address, blockchain.sub_coin_name, True),
+        'current_impact_multiplier': f"{impact_pct}"
     }), 200
 
 @app.route('/chain', methods=['GET'])
@@ -511,25 +476,39 @@ def full_chain():
     user_address = request.args.get('address', 'Unknown_User')
     total_alt_mined = blockchain.get_total_mined(blockchain.sub_coin_name)
     burned_alt = blockchain.get_balance(blockchain.BURN_ADDRESS, blockchain.sub_coin_name, False)
-    impact_pct = max(0.000001, min(99.0, round(blockchain.get_alt_impact_power() * 99.0, 6)))
     
+    shield_impact_power = blockchain.get_shield_impact_power()
+    user_shield_bal = blockchain.get_balance(user_address, blockchain.sub_coin_name)
+
+    if shield_impact_power >= 80.0:
+        tier_range = "99-80 Range"
+    elif shield_impact_power >= 40.0:
+        tier_range = "50-40 Range"
+    elif shield_impact_power >= 10.0:
+        tier_range = "20-10 Range"
+    elif shield_impact_power >= 1.0:
+        tier_range = "5-1 Range"
+    else:
+        tier_range = "<1 Floor"
+
+    shield_effective_pct = round((shield_impact_power / 99.0) * 100.0, 2)
+    compact_shield_display = f"{user_shield_bal} [{tier_range} | {shield_effective_pct}% Impact]"
+
+    # Clean UI representation returned here
     return jsonify({
         '1_GLOBAL_DATA': {
-            'block_height': blockchain.get_chain_length(),
-            'active_peers': len(blockchain.nodes) + 1,
+            'main_chain_height': blockchain.get_chain_length("MAIN"),
+            'alt_chain_height': blockchain.get_chain_length(blockchain.sub_coin_name),
             'main_coin_supply': f"{blockchain.get_total_mined('MAIN')} / {blockchain.get_effective_max_supply(user_address)}",
-            'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Burned: {burned_alt})",
-            'global_market_price': f"{blockchain.market_price}$",
-            'active_nodes': blockchain.nodes
+            'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Active, Burned: {burned_alt})",
+            'impact_power': f"{shield_impact_power}"
         },
         '2_USER_DATA': {
             'wallet_address': user_address, 
-            'personal_effective_price': f"{blockchain.get_effective_price(user_address)}$", 
-            'impact_power': f"{impact_pct}%",
-            'node_power_main': blockchain.get_node_power("MAIN", user_address),
-            'node_power_shield': blockchain.get_node_power("ALT")
-        },
-        'chain_data': list(blockchain.chain_space.values())
+            'main_coin_balance': blockchain.get_balance(user_address, 'MAIN'),
+            'shield_coin_balance': user_shield_bal,
+            'shield_compact_info': compact_shield_display
+        }
     }), 200
 
 if __name__ == '__main__':
