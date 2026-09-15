@@ -3,44 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Variable Coin Protocol Hub</title>
+    <title>Variable Coin Protocol Center</title>
     <style>
-        :root {
-            --bg: #0d1117;
-            --surface: #161b22;
-            --border: #30363d;
-            --text-main: #c9d1d9;
-            --text-muted: #8b949e;
-            --accent: #58a6ff;
-            --success: #238636;
-            --danger: #da3633;
-            --shield: #a371f7;
-            --shield-hover: #bc8cff;
+        * {
+            box-sizing: border-box;
+            color: #ffffff;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
+            font-family: Arial, sans-serif;
+            background-color: #0d1117;
             margin: 0;
-            padding: 15px;
-            box-sizing: border-box;
+            padding: 20px;
             top: 0px !important;
             position: static !important;
         }
 
-        /* Prevent Google Translate banner and iframe explosion */
         .goog-te-banner-frame.skiptranslate, 
         .goog-te-banner-frame,
         iframe.goog-te-menu-frame {
             display: none !important;
         }
 
-        body {
-            top: 0px !important;
-        }
-
-        /* Native compact vertical Google Translate dropdown */
         #google_translate_element {
             display: inline-block;
             margin: 0;
@@ -55,8 +39,8 @@
 
         .goog-te-gadget .goog-te-combo {
             background-color: #010409 !important;
-            color: #c9d1d9 !important;
-            border: 1px solid var(--border) !important;
+            color: #ffffff !important;
+            border: 1px solid #30363d !important;
             padding: 8px 12px !important;
             border-radius: 6px !important;
             font-size: 13px !important;
@@ -64,7 +48,6 @@
             cursor: pointer !important;
             margin: 0 !important;
             display: inline-block !important;
-            max-width: 170px !important;
         }
 
         .goog-te-gadget span, 
@@ -73,33 +56,43 @@
         }
 
         .container { 
-            max-width: 1240px; 
+            max-width: 1200px; 
             margin: auto; 
-            width: 100%;
-            box-sizing: border-box;
         }
 
         h1, h2, h3 { 
-            margin-top: 0; 
-            color: #f0f6fc; 
+            color: #58a6ff !important; 
+            margin-top: 0;
         }
         
         .header {
             display: flex; 
             justify-content: space-between; 
             align-items: center;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 2px solid #30363d;
             padding-bottom: 15px; 
             margin-bottom: 20px;
             flex-wrap: wrap;
             gap: 15px;
         }
 
-        .header-controls { 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
-            flex-wrap: wrap;
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .shield-center {
+            border: 2px solid #a371f7;
+            background-color: #1a162b;
         }
 
         .grid-2 { 
@@ -107,137 +100,113 @@
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
             gap: 20px; 
         }
-        
-        .card {
-            background-color: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
-        .shield-center {
-            border: 2px solid var(--shield);
-            background: linear-gradient(180deg, rgba(22,27,34,1) 0%, rgba(30,20,50,0.4) 100%);
-        }
-
-        .action-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px; 
-            margin-top: 15px; 
-            margin-bottom: 15px;
-        }
-
-        .action-box {
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .action-box:hover { 
-            border-color: var(--shield); 
-            background: rgba(163, 113, 247, 0.1); 
-        }
-
-        .action-box.selected { 
-            border-color: var(--accent); 
-            background: rgba(88, 166, 255, 0.15); 
-            box-shadow: 0 0 10px rgba(88, 166, 255, 0.2); 
-        }
-        
-        .action-title { 
-            font-weight: bold; 
-            font-size: 11px; 
-            color: #fff; 
-            margin-bottom: 4px; 
-            text-transform: uppercase; 
-        }
-
-        .action-sub { 
-            font-size: 10px; 
-            color: var(--text-muted); 
-            line-height: 1.2;
-        }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 12px;
         }
 
         .stat-row { 
             display: flex; 
             justify-content: space-between; 
-            padding: 8px 0; 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            padding: 10px; 
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
             align-items: center;
-            gap: 10px;
         }
 
         .stat-label { 
-            color: var(--text-muted); 
+            color: #8b949e !important; 
             font-size: 13px;
         }
 
         .stat-val { 
             font-weight: bold; 
-            font-size: 13px; 
+            color: #58a6ff !important;
+            font-size: 13px;
             text-align: right;
             word-break: break-all;
         }
 
-        input, select, textarea, button {
+        input, select, textarea {
             width: 100%; 
-            padding: 10px; 
-            margin-top: 6px; 
+            padding: 12px; 
+            margin-top: 8px; 
             margin-bottom: 14px;
             border-radius: 6px; 
-            border: 1px solid var(--border);
-            background: #010409; 
-            color: #fff; 
-            font-size: 13px; 
-            box-sizing: border-box;
+            border: 1px solid #30363d;
+            background-color: #010409 !important; 
+            color: #ffffff !important; 
+            -webkit-text-fill-color: #ffffff !important;
+            caret-color: #58a6ff !important;
+            font-size: 14px; 
+            outline: none;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #6e7681 !important;
+            -webkit-text-fill-color: #6e7681 !important;
         }
 
         button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            border-radius: 6px;
             cursor: pointer; 
             font-weight: bold; 
             border: none;
-            background-color: var(--accent); 
-            color: #fff;
-            text-transform: uppercase; 
-            letter-spacing: 0.5px;
+            background-color: #238636; 
+            color: #ffffff !important;
+            text-transform: uppercase;
         }
 
+        button.btn-blue { background-color: #1f6feb; }
+        button.btn-purple { background-color: #8957e5; }
         button:hover { opacity: 0.9; }
-        button.btn-shield { background-color: var(--shield); }
-        button.btn-shield:hover { background-color: var(--shield-hover); }
-        button.btn-success { background-color: var(--success); }
 
-        .sim-box {
-            background: #010409; 
-            border: 1px dashed var(--shield);
-            border-radius: 8px; 
-            padding: 12px; 
-            margin-bottom: 14px;
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px; 
+            margin: 15px 0;
+        }
+
+        .action-box {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 12px 8px;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+            transition: all 0.2s ease;
+        }
+
+        .action-box:hover {
+            border-color: #a371f7;
+            background-color: rgba(163, 113, 247, 0.1);
+        }
+
+        .action-box.selected {
+            border-color: #58a6ff;
+            background-color: #1f6feb33;
+            box-shadow: 0 0 8px rgba(88, 166, 255, 0.3);
         }
 
         pre {
-            background: #000; 
-            padding: 10px; 
+            background-color: #000000;
+            padding: 12px;
             border-radius: 6px;
-            border: 1px solid var(--border); 
-            overflow-x: auto; 
-            font-size: 11px; 
-            max-height: 110px;
-            word-break: break-all;
+            border: 1px solid #30363d;
+            color: #f0f6fc !important;
+            max-height: 120px;
+            overflow-y: auto;
             white-space: pre-wrap;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -246,151 +215,131 @@
 <div class="container">
     <div class="header">
         <div>
-            <h1 style="margin-bottom: 4px; font-size: 20px;">Variable Coin Protocol Hub</h1>
-            <div style="color: var(--text-muted); font-size: 12px;">Decentralized Ledger & Dynamic Governance Architecture</div>
+            <h1 style="font-size: 22px;">Variable Coin Protocol Center</h1>
+            <p style="color: #8b949e; margin: 0; font-size: 13px;">Infinite Variable Protocol Hub</p>
         </div>
         <div class="header-controls">
             <div id="google_translate_element"></div>
-            <button onclick="refreshNetwork()" style="width: auto; padding: 8px 14px; margin: 0;">REFRESH</button>
+            <button class="btn-blue" onclick="refreshNetwork()" style="width: auto; padding: 8px 16px; margin: 0;">REFRESH</button>
         </div>
     </div>
 
     <!-- LIVE NETWORK STATUS -->
     <div class="card">
-        <h3 style="font-size: 16px; margin-bottom: 12px;">Live Network Status</h3>
+        <h3>Live Network Status</h3>
         <div class="stats-grid">
-            <div class="stat-row"><span class="stat-label">Block Height:</span><span id="stat-height" class="stat-val" style="color: var(--accent);">-</span></div>
-            <div class="stat-row"><span class="stat-label">Active Peers:</span><span id="stat-peers" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Main Chain Height:</span><span id="stat-main-height" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Alt Chain Height:</span><span id="stat-alt-height" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Main Coin Supply:</span><span id="stat-main" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Shield Coin Circulating:</span><span id="stat-alt" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Current Impact Power:</span><span id="stat-impact" class="stat-val" style="color: var(--shield);">-</span></div>
-            <div class="stat-row"><span class="stat-label">Global Market Price:</span><span id="stat-market" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Shield Coin Supply:</span><span id="stat-alt" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Current Target Power:</span><span id="stat-impact" class="stat-val" style="color: #a371f7 !important;">-</span></div>
         </div>
     </div>
 
-    <!-- SHIELD COIN COMMAND CENTER -->
+    <!-- VARIABLE COMMAND CENTER -->
     <div class="card shield-center">
-        <h2 style="font-size: 17px; margin-bottom: 6px;">🛡️ SHIELD COIN COMMAND CENTER</h2>
-        <p style="color: var(--text-muted); font-size: 12px; margin-bottom: 15px;">
-            Burn helper tokens (Shield) to trigger authorized Personal or Global network modifications safely.
-        </p>
+        <h2 style="color: #a371f7 !important;">Variable Coin Command Center</h2>
+        <p style="color: #8b949e; font-size: 13px;">Burn Shield tokens to modulate protocol parameters dynamically.</p>
 
-        <label class="stat-label">Your Wallet Address (Public Key):</label>
-        <input type="text" id="cmd-addr" placeholder="Enter Public Key...">
+        <label class="stat-label">Wallet Address (Public Key):</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="cmd-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
+            <button class="btn-blue" onclick="pasteToInput('cmd-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
+        </div>
 
-        <label class="stat-label" style="color: var(--danger);">Signature (Private Key):</label>
-        <input type="password" id="cmd-priv" placeholder="Enter Private Key to authorize this transaction...">
+        <label class="stat-label" style="color: #da3633 !important; margin-top: 14px; display: block;">Signature (Private Key):</label>
+        <input type="password" id="cmd-priv" placeholder="Enter private key...">
 
-        <label class="stat-label" style="color: var(--accent);">Select Scope (Who will this affect?):</label>
-        <select id="cmd-scope" onchange="runSimulation()" style="border-color: var(--accent);">
+        <label class="stat-label">Select Scope:</label>
+        <select id="cmd-scope">
             <option value="personal">[PERSONAL] Apply modifications only to my wallet</option>
             <option value="global">[GLOBAL] Apply modifications to the entire network</option>
         </select>
 
         <div class="action-grid">
-            <div class="action-box" onclick="selectAction('price', 'stabilize', this)">
-                <div class="action-title">⚓ PEG PRICE</div>
-                <div class="action-sub">Stabilize effective value</div>
-            </div>
-            <div class="action-box" onclick="selectAction('price', 'boost', this)">
-                <div class="action-title">📈 BOOST PRICE</div>
-                <div class="action-sub">Increase effective value</div>
-            </div>
-            <div class="action-box" onclick="selectAction('price', 'discount', this)">
-                <div class="action-title">📉 DISCOUNT PRICE</div>
-                <div class="action-sub">Decrease effective value</div>
-            </div>
-            <div class="action-box" onclick="selectAction('supply', 'burn_main', this)">
-                <div class="action-title">🔥 BURN SUPPLY</div>
-                <div class="action-sub">Destroy main coins</div>
-            </div>
-            <div class="action-box" onclick="selectAction('supply', 'expand_supply', this)">
-                <div class="action-title">🌌 EXPAND CAP</div>
-                <div class="action-sub">Increase max supply</div>
-            </div>
-            <div class="action-box" onclick="selectAction('difficulty', 'ease', this)">
-                <div class="action-title">⛏️ EASE MINING</div>
-                <div class="action-sub">Decrease difficulty safely</div>
-            </div>
-            <div class="action-box" onclick="selectAction('difficulty', 'tighten', this)">
-                <div class="action-title">🧱 TIGHTEN SECURITY</div>
-                <div class="action-sub">Increase difficulty</div>
-            </div>
+            <div class="action-box" onclick="selectAction('peg_static', this)">⚖️ PEG PRICE<br><small>Stabilize effective valuation</small></div>
+            <div class="action-box" onclick="selectAction('boost_price', this)">📈 BOOST PRICE<br><small>Increase effective coefficient</small></div>
+            <div class="action-box" onclick="selectAction('discount_price', this)">📉 DISCOUNT PRICE<br><small>Apply discount coefficient</small></div>
+            <div class="action-box" onclick="selectAction('burn_main', this)">🔥 BURN SUPPLY<br><small>Permanently destroy tokens</small></div>
+            <div class="action-box" onclick="selectAction('expand_supply', this)">📦 EXPAND CAPACITY<br><small>Increase maximum ceiling</small></div>
         </div>
 
-        <label class="stat-label">Amount of Shield Coins to Burn:</label>
-        <input type="number" id="cmd-amount" placeholder="e.g. 5.5" min="0.000001" step="any" oninput="runSimulation()">
+        <label class="stat-label">Shield Usage Ratio (%): <span id="pct-val" style="color: #58a6ff; font-weight: bold;">100</span>%</label>
+        <input type="range" id="cmd-percentage" min="1" max="100" value="100" oninput="document.getElementById('pct-val').innerText = this.value" style="margin-top: 6px; cursor: pointer;">
+        <p style="color: #8b949e; font-size: 11px; margin-top: -8px; margin-bottom: 14px;">Select percentage of balance to burn. Retained balance remains stored in the wallet.</p>
 
-        <div class="sim-box" id="sim-box" style="display: none;">
-            <div style="color: var(--accent); font-weight: bold; margin-bottom: 6px;">Simulation Preview:</div>
-            <div id="sim-text" style="color: var(--text-main); font-size: 12px; line-height: 1.4;">-</div>
-        </div>
-
-        <button class="btn-shield" onclick="executeCommand()">EXECUTE PROTOCOL COMMAND</button>
+        <button class="btn-purple" onclick="executeCommand()">EXECUTE PROTOCOL ACTION</button>
         <pre id="cmd-log" style="display: none;"></pre>
     </div>
 
-    <!-- WALLET & MINING HUBS -->
+    <!-- WALLET & MINING -->
     <div class="grid-2">
         <div class="card">
-            <h2 style="font-size: 17px;">Wallet Hub</h2>
-            <button class="btn-success" onclick="createWallet()">GENERATE 12-WORD WALLET</button>
+            <h2>Wallet Hub</h2>
+            <button onclick="createWallet()">GENERATE 12-WORD WALLET</button>
             
             <div id="wallet-keys" style="display: none; margin-top: 15px;">
-                <div style="background-color: rgba(218, 54, 51, 0.1); color: var(--danger); padding: 10px; border: 1px solid var(--danger); border-radius: 5px; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 12px;">
-                    ⚠️ WARNING: Store your recovery phrase and Private Key securely!
+                <div style="background-color: rgba(218, 54, 51, 0.1); color: #da3633; padding: 10px; border: 1px solid #da3633; border-radius: 5px; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 12px;">
+                    WARNING: Store your mnemonic recovery phrase and private key offline securely.
                 </div>
 
                 <label class="stat-label">12-Word Recovery Phrase:</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <textarea id="disp-seed" rows="2" readonly style="font-weight: bold; color: var(--shield); resize: none; flex: 1; margin: 0;"></textarea>
-                    <button onclick="copyInputField('disp-seed')" style="width: auto; padding: 8px 12px; margin: 0;">COPY</button>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                    <textarea id="disp-seed" rows="2" readonly style="font-weight: bold; color: #a371f7 !important; resize: none; flex: 1; margin: 0;"></textarea>
+                    <button class="btn-purple" onclick="copyInputField('disp-seed', this)" style="width: auto; padding: 8px 14px; margin: 0;">COPY</button>
                 </div>
                 
-                <label class="stat-label" style="margin-top: 12px; display: block;">Wallet Address (Public Key):</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <label class="stat-label" style="display: block;">Wallet Address (Public Key):</label>
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
                     <pre id="disp-pub" style="flex: 1; margin: 0;"></pre>
-                    <button onclick="copyTextContent('disp-pub')" style="width: auto; padding: 8px 12px; margin: 0;">COPY</button>
+                    <button class="btn-blue" onclick="copyTextContent('disp-pub', this)" style="width: auto; padding: 8px 14px; margin: 0;">COPY</button>
                 </div>
                 
-                <label class="stat-label" style="margin-top: 12px; display: block; color: var(--danger);">Private Key (For Signatures):</label>
+                <label class="stat-label" style="display: block; color: #da3633 !important;">Private Key (Authorization):</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <pre id="disp-priv-key" style="color: var(--danger); flex: 1; margin: 0;"></pre>
-                    <button onclick="copyTextContent('disp-priv-key')" style="width: auto; padding: 8px 12px; margin: 0;">COPY</button>
+                    <pre id="disp-priv-key" style="color: #da3633 !important; flex: 1; margin: 0;"></pre>
+                    <button class="btn-blue" onclick="copyTextContent('disp-priv-key', this)" style="width: auto; padding: 8px 14px; margin: 0; background-color: #da3633;">COPY</button>
                 </div>
             </div>
 
-            <hr style="border-color: var(--border); margin: 15px 0;">
+            <hr style="border-color: #30363d; margin: 20px 0;">
             
-            <h3 style="font-size: 15px;">Recover Wallet</h3>
-            <textarea id="rec-seed" rows="2" placeholder="Enter your 12-word seed phrase..." style="resize: none;"></textarea>
-            <button class="btn-shield" onclick="recoverWallet()">RECOVER WALLET</button>
+            <h3>Recover Existing Wallet</h3>
+            <textarea id="rec-seed" rows="2" placeholder="Enter 12-word mnemonic phrase..."></textarea>
+            <button class="btn-purple" onclick="recoverWallet()">RESTORE WALLET</button>
 
-            <hr style="border-color: var(--border); margin: 15px 0;">
+            <hr style="border-color: #30363d; margin: 20px 0;">
             
-            <h3 style="font-size: 15px;">Check Balance</h3>
-            <input type="text" id="chk-addr" placeholder="Enter Wallet Address">
-            <button onclick="checkBalance()">CHECK BALANCE</button>
+            <h3>Ledger Balance Query</h3>
+            <label class="stat-label">Wallet Address:</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="chk-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
+                <button class="btn-blue" onclick="pasteToInput('chk-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
+            </div>
+            <button class="btn-blue" onclick="checkBalance(true)" style="margin-top: 14px;">QUERY LEDGER</button>
             <div id="balance-res" style="display: none; margin-top: 12px;">
                 <div class="stat-row"><span class="stat-label">MAIN COIN:</span><span id="bal-main" class="stat-val">0</span></div>
-                <div class="stat-row"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: var(--shield);">0</span></div>
+                <div class="stat-row"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: #a371f7 !important;">0</span></div>
             </div>
         </div>
 
         <div class="card">
-            <h2 style="font-size: 17px;">Mining Hub</h2>
-            <p style="color: var(--text-muted); font-size: 12px;">Consensus verification and block transactions are securely resolved via distributed computing power.</p>
+            <h2>Mining Hub</h2>
+            <p style="color: #8b949e; font-size: 13px;">Proof-of-work resolved across infinite variable matrix.</p>
             
             <label class="stat-label">Miner Address:</label>
-            <input type="text" id="mine-addr" placeholder="Enter Wallet Address">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="mine-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
+                <button class="btn-blue" onclick="pasteToInput('mine-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
+            </div>
 
-            <label class="stat-label">Target Asset:</label>
+            <label class="stat-label" style="margin-top: 14px; display: block;">Target Asset:</label>
             <select id="mine-type">
-                <option value="MAIN">MAIN COIN (Standard & Limited)</option>
-                <option value="ALT">SHIELD COIN (Protocol Modulator)</option>
+                <option value="MAIN">MAIN COIN (Fixed 21M Base Supply)</option>
+                <option value="ALT">SHIELD COIN (Infinite Matrix Utility Token)</option>
             </select>
 
-            <button id="btn-mine" onclick="startMining()">START MINING</button>
+            <button id="btn-mine" class="btn-blue" onclick="startMining()">DISPATCH MINER</button>
             <pre id="mine-log" style="display: none;"></pre>
         </div>
     </div>
@@ -408,34 +357,14 @@
 
 <script>
     const API = window.location.origin;
-    let activeCategory = null;
     let activeAction = null;
 
     window.onload = refreshNetwork;
 
-    function selectAction(category, action, element) {
-        activeCategory = category;
+    function selectAction(action, element) {
         activeAction = action;
-        
         document.querySelectorAll('.action-box').forEach(el => el.classList.remove('selected'));
         element.classList.add('selected');
-        
-        runSimulation();
-    }
-
-    function runSimulation() {
-        const amount = parseFloat(document.getElementById('cmd-amount').value) || 0;
-        const box = document.getElementById('sim-box');
-        const text = document.getElementById('sim-text');
-        const scope = document.getElementById('cmd-scope').value;
-
-        if (amount <= 0 || !activeAction) {
-            box.style.display = 'none'; return;
-        }
-
-        box.style.display = 'block';
-        const scopeTag = scope === 'personal' ? '<strong>[PERSONAL]</strong>' : '<strong style="color: var(--danger);">[GLOBAL]</strong>';
-        text.innerHTML = `${scopeTag} Action <strong>${activeAction}</strong> will be executed using current impact power.`;
     }
 
     async function refreshNetwork() {
@@ -443,52 +372,12 @@
             const res = await fetch(`${API}/chain`);
             const data = await res.json();
             
-            document.getElementById('stat-height').innerText = data["1_GLOBAL_DATA"]?.["block_height"] || "1";
-            document.getElementById('stat-peers').innerText = data["1_GLOBAL_DATA"]?.["active_peers"] || "1";
+            document.getElementById('stat-main-height').innerText = data["1_GLOBAL_DATA"]?.["main_chain_height"] || "1";
+            document.getElementById('stat-alt-height').innerText = data["1_GLOBAL_DATA"]?.["alt_chain_height"] || "1";
             document.getElementById('stat-main').innerText = data["1_GLOBAL_DATA"]?.["main_coin_supply"] || "-";
             document.getElementById('stat-alt').innerText = data["1_GLOBAL_DATA"]?.["shield_coin_circulating"] || "-";
-            
-            let impactStr = data["2_USER_DATA"]?.["impact_power"] || "99%";
-            document.getElementById('stat-impact').innerText = impactStr;
-
-            let priceStr = data["1_GLOBAL_DATA"]?.["global_market_price"] || "0.0$";
-            if (!priceStr.includes("$")) {
-                priceStr = "$" + priceStr;
-            }
-            document.getElementById('stat-market').innerText = priceStr;
-        } catch (e) { console.error("API Error:", e); }
-    }
-
-    async function executeCommand() {
-        const addr = document.getElementById('cmd-addr').value.trim();
-        const privKey = document.getElementById('cmd-priv').value.trim();
-        const amount = parseFloat(document.getElementById('cmd-amount').value);
-        const log = document.getElementById('cmd-log');
-        const scope = document.getElementById('cmd-scope').value;
-
-        if (!addr || !privKey || !activeCategory || isNaN(amount) || amount <= 0) {
-            return alert("Please select an action, enter a valid wallet address, Private Key, and amount.");
-        }
-
-        log.style.display = "block";
-        log.innerText = "Verifying signature and executing protocol modulation...";
-
-        try {
-            const res = await fetch(`${API}/protocol/act`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    address: addr, 
-                    private_key: privKey, 
-                    alt_amount: amount, 
-                    category: activeCategory, 
-                    action: activeAction,
-                    scope: scope
-                })
-            });
-            log.innerText = JSON.stringify(await res.json(), null, 2);
-            refreshNetwork(); checkBalance();
-        } catch (e) { log.innerText = "Execution failed."; }
+            document.getElementById('stat-impact').innerText = data["1_GLOBAL_DATA"]?.["impact_power"] || "99.0";
+        } catch (e) { console.error("API error:", e); }
     }
 
     async function createWallet() {
@@ -502,7 +391,7 @@
 
     async function recoverWallet() {
         const mnemonic = document.getElementById('rec-seed').value.trim();
-        if (!mnemonic) return alert("Please enter your 12-word seed phrase.");
+        if (!mnemonic) return alert("Please supply the 12-word recovery mnemonic.");
 
         try {
             const res = await fetch(`${API}/wallet/recover`, {
@@ -516,36 +405,29 @@
                 document.getElementById('disp-pub').innerText = data.public_key;
                 document.getElementById('disp-priv-key').innerText = data.private_key;
                 document.getElementById('wallet-keys').style.display = 'block';
-                alert("Wallet successfully recovered!");
+                alert("Wallet verification and recovery complete.");
             } else {
-                alert(data.error || "Recovery failed.");
+                alert(data.error || "Mnemonic recovery failed.");
             }
-        } catch (e) {
-            alert("Network error.");
-        }
+        } catch (e) { alert("Network communication error."); }
     }
 
-    async function checkBalance() {
-        const addr = document.getElementById('chk-addr').value.trim();
-        if(!addr) return alert("Enter wallet address");
+    async function checkBalance(isManual = false) {
+        let addr = document.getElementById('chk-addr').value.trim();
+        if (!addr) {
+            if (isManual) alert("Please enter a valid wallet address.");
+            document.getElementById('balance-res').style.display = 'none';
+            return;
+        }
 
-        const data = await (await fetch(`${API}/chain?address=${addr}`)).json();
-        let main = 0, alt = 0;
-        const blocks = data.chain_data || [];
-        
-        blocks.forEach(b => {
-            if(b.transactions) {
-                b.transactions.forEach(tx => {
-                    const coin = tx.coin_type || "MAIN";
-                    if (tx.recipient === addr) coin === "MAIN" ? main += tx.amount : alt += tx.amount;
-                    if (tx.sender === addr) coin === "MAIN" ? main -= tx.amount : alt -= tx.amount;
-                });
-            }
-        });
-        
-        document.getElementById('bal-main').innerText = main;
-        document.getElementById('bal-alt').innerText = alt;
-        document.getElementById('balance-res').style.display = 'block';
+        try {
+            const data = await (await fetch(`${API}/chain?address=${addr}`)).json();
+            document.getElementById('bal-main').innerText = data["2_USER_DATA"]?.["main_coin_balance"] || 0;
+            document.getElementById('bal-alt').innerText = data["2_USER_DATA"]?.["shield_compact_info"] || (data["2_USER_DATA"]?.["shield_coin_balance"] || 0);
+            document.getElementById('balance-res').style.display = 'block';
+        } catch(e) {
+            if (isManual) alert("Failed to fetch wallet balances.");
+        }
     }
 
     async function startMining() {
@@ -554,33 +436,129 @@
         const btn = document.getElementById('btn-mine');
         const log = document.getElementById('mine-log');
 
-        if (!addr) return alert("Please enter miner address.");
+        if (!addr) return alert("Please enter a valid miner address.");
 
-        btn.disabled = true; btn.innerText = "MINING IN PROGRESS...";
-        log.style.display = "block"; log.innerText = "Computing SHA-256 Hash. Please wait...";
+        btn.disabled = true; 
+        btn.innerText = "MINING IN PROGRESS...";
+        log.style.display = "block"; 
+        log.innerText = "Searching infinite variable matrix space...";
 
         try {
             const data = await (await fetch(`${API}/mine?address=${addr}&coin=${coin}`)).json();
             log.innerText = JSON.stringify(data, null, 2);
-            refreshNetwork(); checkBalance();
-        } catch (e) { log.innerText = "Mining timeout or error."; }
-        finally { btn.disabled = false; btn.innerText = "START MINING"; }
+            refreshNetwork(); 
+            checkBalance(false);
+        } catch (e) { 
+            log.innerText = "Mining cycle error occurred."; 
+        } finally { 
+            btn.disabled = false; 
+            btn.innerText = "DISPATCH MINER"; 
+        }
     }
 
-    function copyInputField(elementId) {
-        var copyText = document.getElementById(elementId);
-        copyText.select();
-        copyText.setSelectionRange(0, 99999);
-        navigator.clipboard.writeText(copyText.value).then(function() {
-            alert("Copied to clipboard!");
-        });
+    async function executeCommand() {
+        const addr = document.getElementById('cmd-addr').value.trim();
+        const privKey = document.getElementById('cmd-priv').value.trim();
+        const percentage = parseFloat(document.getElementById('cmd-percentage').value);
+        const log = document.getElementById('cmd-log');
+        const scope = document.getElementById('cmd-scope').value;
+
+        if (!addr || !privKey || !activeAction || isNaN(percentage)) {
+            return alert("Please select an action type and enter keys alongside a valid percentage.");
+        }
+
+        log.style.display = "block";
+        log.innerText = "Broadcasting protocol mutation...";
+
+        try {
+            const res = await fetch(`${API}/protocol/act`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ 
+                    address: addr, 
+                    private_key: privKey, 
+                    alt_percentage: percentage, 
+                    action: activeAction,
+                    scope: scope
+                })
+            });
+            log.innerText = JSON.stringify(await res.json(), null, 2);
+            refreshNetwork(); 
+            checkBalance(false);
+        } catch (e) { log.innerText = "Execution failed."; }
     }
 
-    function copyTextContent(elementId) {
-        var copyText = document.getElementById(elementId).innerText;
-        navigator.clipboard.writeText(copyText).then(function() {
-            alert("Successfully copied to clipboard!");
-        });
+    function copyToClipboard(text, btn) {
+        if (!text) return;
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess(btn, "COPIED");
+            }).catch(() => {
+                fallbackCopy(text, btn);
+            });
+        } else {
+            fallbackCopy(text, btn);
+        }
+    }
+
+    function fallbackCopy(text, btn) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showSuccess(btn, "COPIED");
+        } catch (err) {
+            console.error('Fallback copy error:', err);
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function showSuccess(btn, message) {
+        if (btn) {
+            const old = btn.innerText;
+            btn.innerText = message;
+            setTimeout(() => { btn.innerText = old; }, 1200);
+        }
+    }
+
+    function copyInputField(elementId, btn) {
+        const el = document.getElementById(elementId);
+        if (el) copyToClipboard(el.value, btn);
+    }
+
+    function copyTextContent(elementId, btn) {
+        const el = document.getElementById(elementId);
+        if (el) copyToClipboard(el.innerText, btn);
+    }
+
+    async function pasteToInput(elementId, btn) {
+        const input = document.getElementById(elementId);
+        if (!input) return;
+
+        if (navigator.clipboard && navigator.clipboard.readText && window.isSecureContext) {
+            try {
+                const text = await navigator.clipboard.readText();
+                input.value = text.trim();
+                showSuccess(btn, "PASTED");
+                return;
+            } catch (err) {
+                // Fallback prompt on HTTP or restricted environments
+            }
+        }
+
+        input.focus();
+        const manualText = prompt("Clipboard access restricted. Paste input here (Ctrl+V):");
+        if (manualText !== null && manualText.trim() !== "") {
+            input.value = manualText.trim();
+            showSuccess(btn, "PASTED");
+        }
     }
 </script>
 </body>
