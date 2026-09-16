@@ -130,6 +130,33 @@
             word-break: break-all;
         }
 
+        .tier-breakdown-box {
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+            gap: 8px;
+        }
+
+        .tier-card {
+            background-color: #010409;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .tier-title {
+            font-size: 10px;
+            color: #8b949e !important;
+            margin-bottom: 4px;
+        }
+
+        .tier-count {
+            font-size: 13px;
+            font-weight: bold;
+            color: #a371f7 !important;
+        }
+
         input, select, textarea {
             width: 100%; 
             padding: 12px; 
@@ -319,7 +346,35 @@
             <button class="btn-blue" onclick="checkBalance(true)" style="margin-top: 14px;">QUERY LEDGER</button>
             <div id="balance-res" style="display: none; margin-top: 12px;">
                 <div class="stat-row"><span class="stat-label">MAIN COIN:</span><span id="bal-main" class="stat-val">0</span></div>
-                <div class="stat-row"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: #a371f7 !important;">0</span></div>
+                <div class="stat-row" style="margin-top: 8px;"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: #a371f7 !important;">0</span></div>
+                
+                <!-- 6-TIER BREAKDOWN CARDS -->
+                <div class="tier-breakdown-box" id="tier-container">
+                    <div class="tier-card">
+                        <div class="tier-title">%99-70 (0-1K)</div>
+                        <div class="tier-count" id="tier-1-val">0</div>
+                    </div>
+                    <div class="tier-card">
+                        <div class="tier-title">%70-50 (1K-10K)</div>
+                        <div class="tier-count" id="tier-2-val">0</div>
+                    </div>
+                    <div class="tier-card">
+                        <div class="tier-title">%50-30 (10K-4M)</div>
+                        <div class="tier-count" id="tier-3-val">0</div>
+                    </div>
+                    <div class="tier-card">
+                        <div class="tier-title">%30-10 (4M-8M)</div>
+                        <div class="tier-count" id="tier-4-val">0</div>
+                    </div>
+                    <div class="tier-card">
+                        <div class="tier-title">%10-1 (8M-16M)</div>
+                        <div class="tier-count" id="tier-5-val">0</div>
+                    </div>
+                    <div class="tier-card">
+                        <div class="tier-title">&lt;%1 (16M+)</div>
+                        <div class="tier-count" id="tier-6-val">0</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -422,8 +477,19 @@
 
         try {
             const data = await (await fetch(`${API}/chain?address=${addr}`)).json();
-            document.getElementById('bal-main').innerText = data["2_USER_DATA"]?.["main_coin_balance"] || 0;
-            document.getElementById('bal-alt').innerText = data["2_USER_DATA"]?.["shield_compact_info"] || (data["2_USER_DATA"]?.["shield_coin_balance"] || 0);
+            const userData = data["2_USER_DATA"] || {};
+            
+            document.getElementById('bal-main').innerText = userData["main_coin_balance"] || 0;
+            document.getElementById('bal-alt').innerText = userData["shield_compact_info"] || (userData["shield_coin_balance"] || 0);
+            
+            const tiers = userData["shield_tier_breakdown"] || {};
+            document.getElementById('tier-1-val').innerText = (tiers["tier_99_70"] || 0).toLocaleString();
+            document.getElementById('tier-2-val').innerText = (tiers["tier_70_50"] || 0).toLocaleString();
+            document.getElementById('tier-3-val').innerText = (tiers["tier_50_30"] || 0).toLocaleString();
+            document.getElementById('tier-4-val').innerText = (tiers["tier_30_10"] || 0).toLocaleString();
+            document.getElementById('tier-5-val').innerText = (tiers["tier_10_1"] || 0).toLocaleString();
+            document.getElementById('tier-6-val').innerText = (tiers["tier_below_1"] || 0).toLocaleString();
+
             document.getElementById('balance-res').style.display = 'block';
         } catch(e) {
             if (isManual) alert("Failed to fetch wallet balances.");
