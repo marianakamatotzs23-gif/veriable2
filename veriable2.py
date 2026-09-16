@@ -66,26 +66,95 @@ class InfiniteVariableSearchEngine:
         return "0x0", attempts, mining_difficulty
 
 
-class VariableStorageEngine:
+class ResilientVariableStorageEngine:
+    """
+    1-99 State Engine:
+    Data is never erased (never reaches 0%). 
+    When pruned, power drops to base anchor 1.0 (1%). 
+    When restored, it remains quarantined at 1.0 until verified and elevated back to 99.0.
+    """
     def __init__(self):
-        self.main_block_lookup = {}
-        self.alt_block_lookup = {}
+        self.matrix_blocks = {}
 
     def allocate_block(self, block, coin_type="MAIN"):
-        if coin_type == "MAIN":
-            self.main_block_lookup[block['index']] = block
+        idx = int(block['index'])
+        block['power_scale'] = 99.0
+        block['status'] = "ACTIVE"
+        
+        tx_serialized = json.dumps(block.get('transactions', []), sort_keys=True)
+        block['data_snapshot_hash'] = hashlib.sha256(tx_serialized.encode()).hexdigest()
+        
+        self.matrix_blocks[idx] = block
+
+    def soft_prune_block(self, block_index):
+        idx = int(block_index)
+        if idx not in self.matrix_blocks:
+            return False, "Block not found."
+
+        block = self.matrix_blocks[idx]
+        block['archived_payload'] = block.get('transactions', [])
+        block['transactions'] = []
+        block['power_scale'] = 1.0
+        block['status'] = "BASE_LOCKED"
+        return True, f"Block {idx} pruned to 1% baseline anchor."
+
+    def request_restore_block(self, block_index):
+        idx = int(block_index)
+        if idx not in self.matrix_blocks:
+            return False, "Block not found."
+
+        block = self.matrix_blocks[idx]
+        if block['status'] != "BASE_LOCKED":
+            return False, "Block is not in a base-locked state."
+
+        block['transactions'] = block.get('archived_payload', [])
+        block['status'] = "RESTORE_PENDING"
+        block['power_scale'] = 1.0
+        return True, f"Block {idx} retrieved in quarantined state (1%). Awaiting system verification."
+
+    def system_validate_and_elevate(self, block_index):
+        idx = int(block_index)
+        if idx not in self.matrix_blocks:
+            return False, "Block not found."
+
+        block = self.matrix_blocks[idx]
+        if block['status'] != "RESTORE_PENDING":
+            return False, "Block is not awaiting validation."
+
+        current_tx_serialized = json.dumps(block.get('transactions', []), sort_keys=True)
+        current_hash = hashlib.sha256(current_tx_serialized.encode()).hexdigest()
+
+        if current_hash == block.get('data_snapshot_hash'):
+            block['power_scale'] = 99.0
+            block['status'] = "ACTIVE"
+            return True, f"Verification successful. Block {idx} restored to 99% full power."
         else:
-            self.alt_block_lookup[block['index']] = block
+            block['power_scale'] = 1.0
+            block['status'] = "BASE_LOCKED"
+            block['transactions'] = []
+            return False, "Hash mismatch. Block remains locked at 1% baseline."
+
+    @property
+    def main_block_lookup(self):
+        return {idx: b for idx, b in self.matrix_blocks.items() if b.get('coin_type') == "MAIN"}
+
+    @property
+    def alt_block_lookup(self):
+        return {idx: b for idx, b in self.matrix_blocks.items() if b.get('coin_type') != "MAIN"}
 
     def to_dict(self):
         return {
-            "main_block_lookup": self.main_block_lookup,
-            "alt_block_lookup": self.alt_block_lookup
+            "matrix_blocks": {str(k): v for k, v in self.matrix_blocks.items()}
         }
 
     def load_from_dict(self, data):
-        self.main_block_lookup = {int(k): v for k, v in data.get("main_block_lookup", {}).items()}
-        self.alt_block_lookup = {int(k): v for k, v in data.get("alt_block_lookup", {}).items()}
+        if "matrix_blocks" in data:
+            self.matrix_blocks = {int(k): v for k, v in data["matrix_blocks"].items()}
+        else:
+            for k, block in data.get("main_block_lookup", {}).items():
+                self.allocate_block(block, "MAIN")
+            for k, block in data.get("alt_block_lookup", {}).items():
+                self.allocate_block(block, "ALT")
 
 
 class Blockchain(object):
@@ -95,7 +164,7 @@ class Blockchain(object):
         self.BURN_ADDRESS = "0x000000000000000000000000000000000000dEaD"
         self.lock = threading.Lock()
         
-        self.storage = VariableStorageEngine()
+        self.storage = ResilientVariableStorageEngine()
         
         self.BASE_MAX_MAIN = 21000000
         self.BASE_MAIN_REWARD = 50
@@ -211,7 +280,7 @@ class Blockchain(object):
         balance = 0
         lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
         for block in lookup.values():
-            for tx in block['transactions']:
+            for tx in block.get('transactions', []):
                 if tx.get('coin_type', 'MAIN') == coin_type:
                     if tx['sender'] == address:
                         balance -= int(tx['amount'])
@@ -236,12 +305,11 @@ class Blockchain(object):
         total = 0
         lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
         for block in lookup.values():
-            for tx in block['transactions']:
+            for tx in block.get('transactions', []):
                 if tx.get('coin_type', 'MAIN') == coin_type and tx['sender'] == "0":
                     total += int(tx['amount'])
         return int(total)
 
-    # --- MINING DIFFICULTY (COMPLETELY SEPARATE FROM IMPACT) ---
     def get_mining_power_main(self, address=None):
         total_mined = self.get_total_mined("MAIN")
         max_limit = self.get_effective_max_supply(address)
@@ -255,44 +323,47 @@ class Blockchain(object):
         shield_mined = self.get_total_mined(self.sub_coin_name)
         max_limit = self.get_effective_max_supply(address)
         
-        # Shield Mining Difficulty drops 7x faster than Main Mining Difficulty
         equivalent_progress = (shield_mined * 7.0) / float(max_limit)
         progress = min(0.999999, equivalent_progress)
         power = 99.0 * (1.0 - progress)
         return max(0.000000001, round(power, 9))
 
-    # --- PROTOCOL IMPACT POWER (ONLY FOR SHIELD UTILITY, FASTER INITIAL DROP) ---
     def get_shield_impact_power(self):
         alt_mined = self.get_total_mined(self.sub_coin_name)
-        if alt_mined <= 1:
+        if alt_mined <= 0:
             return 99.0
             
-        # Refined Impact Curve:
-        # 1 to 10: Drops instantly from 99 to 95 (Very fast)
-        # 10 to 100: Drops from 95 to 70 (Fast)
-        # 100 to 300: Drops from 70 to 50 (Slowing down)
-        # 300 to 800: Drops from 50 to 40 (Slow)
-        # 800 to 2000: Drops from 40 to 20 (Very slow)
-        # 2000 to 5000: Drops from 20 to 10 (Extremely slow)
-        # 5000+: Slowly grinds to 1 (Near halt)
-        
-        if alt_mined <= 10:
-            power = 99.0 - (alt_mined / 10.0) * 4.0
-        elif alt_mined <= 100:
-            power = 95.0 - ((alt_mined - 10) / 90.0) * 25.0
-        elif alt_mined <= 300:
-            power = 70.0 - ((alt_mined - 100) / 200.0) * 20.0
-        elif alt_mined <= 800:
-            power = 50.0 - ((alt_mined - 300) / 500.0) * 10.0
-        elif alt_mined <= 2000:
-            power = 40.0 - ((alt_mined - 800) / 1200.0) * 20.0
-        elif alt_mined <= 5000:
-            power = 20.0 - ((alt_mined - 2000) / 3000.0) * 10.0
-        else:
-            decay = (alt_mined - 5000) / 25000.0
-            power = 10.0 - (decay * 9.0)
+        # Tier 1: 0 - 1,000 Coin (99 -> 70)
+        if alt_mined <= 1000:
+            progress = alt_mined / 1000.0
+            power = 99.0 - (progress * 29.0)
             
-        return max(0.000000001, round(power, 9))
+        # Tier 2: 1,000 - 10,000 Coin (70 -> 50)
+        elif alt_mined <= 10000:
+            progress = (alt_mined - 1000) / 9000.0
+            power = 70.0 - (progress * 20.0)
+            
+        # Tier 3: 10,000 - 4,000,000 Coin (50 -> 30)
+        elif alt_mined <= 4000000:
+            progress = (alt_mined - 10000) / 3990000.0
+            power = 50.0 - (progress * 20.0)
+            
+        # Tier 4: 4,000,000 - 8,000,000 Coin (30 -> 10)
+        elif alt_mined <= 8000000:
+            progress = (alt_mined - 4000000) / 4000000.0
+            power = 30.0 - (progress * 20.0)
+            
+        # Tier 5: 8,000,000 - 16,000,000 Coin (10 -> 1 | Medium Speed)
+        elif alt_mined <= 16000000:
+            progress = (alt_mined - 8000000) / 8000000.0
+            power = 10.0 - (progress * 9.0)
+            
+        # Tier 6: 16,000,000+ Coin (1 -> 0.00001 Asymptotic Floor)
+        else:
+            extra = alt_mined - 16000000
+            power = max(0.00001, 1.0 / (1.0 + (extra / 10000000.0)))
+            
+        return max(0.00001, round(power, 6))
 
     def get_alt_impact_power_percentage(self):
         power = self.get_shield_impact_power()
@@ -339,7 +410,6 @@ def mine():
         mining_difficulty = blockchain.get_mining_power_shield(miner_address)
         target_power = blockchain.get_shield_impact_power()
 
-    # Matrix search uses purely the MINING DIFFICULTY
     var_hash, attempts, resolved_val = InfiniteVariableSearchEngine.search_infinite_variables(
         f"infinite_search_{coin_type_key}_{miner_address}_{next_index}", 
         mining_difficulty,
@@ -353,7 +423,6 @@ def mine():
     else:
         reward = 1 
         blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type=blockchain.sub_coin_name)
-        # Logging separates Mining Difficulty vs Impact Power for clarity
         earned = f"{reward} Shield Coin (Mining Difficulty Power: {mining_difficulty} | Protocol Impact Power: {target_power} | Matrix Attempts: {attempts})"
 
     block = blockchain.mint_block(
@@ -462,7 +531,7 @@ def protocol_action():
                 stats['personal_boost'] = 0.0
                 message = "[PERSONAL] Wallet parameters pegged and stabilized"
 
-    impact_pct = round(impact_multiplier * 99.0, 9)
+    impact_pct = round(impact_multiplier * 99.0, 6)
     return jsonify({
         'status': 'Success',
         'action_result': message,
@@ -480,21 +549,41 @@ def full_chain():
     shield_impact_power = blockchain.get_shield_impact_power()
     user_shield_bal = blockchain.get_balance(user_address, blockchain.sub_coin_name)
 
-    if shield_impact_power >= 80.0:
-        tier_range = "99-80 Range"
-    elif shield_impact_power >= 40.0:
-        tier_range = "50-40 Range"
+    if shield_impact_power >= 70.0:
+        tier_range = "99-70% Range"
+    elif shield_impact_power >= 50.0:
+        tier_range = "70-50% Range"
+    elif shield_impact_power >= 30.0:
+        tier_range = "50-30% Range"
     elif shield_impact_power >= 10.0:
-        tier_range = "20-10 Range"
+        tier_range = "30-10% Range"
     elif shield_impact_power >= 1.0:
-        tier_range = "5-1 Range"
+        tier_range = "10-1% Range"
     else:
-        tier_range = "<1 Floor"
+        tier_range = "<1% Floor (0.00001)"
 
-    shield_effective_pct = round((shield_impact_power / 99.0) * 100.0, 2)
-    compact_shield_display = f"{user_shield_bal} [{tier_range} | {shield_effective_pct}% Impact]"
+    shield_effective_pct = round((shield_impact_power / 99.0) * 100.0, 4)
 
-    # Clean UI representation returned here
+    # 6-Tier Wallet Balance Distribution
+    b = int(user_shield_bal)
+    t1 = min(b, 1000)
+    t2 = min(max(0, b - 1000), 9000)
+    t3 = min(max(0, b - 10000), 3990000)
+    t4 = min(max(0, b - 4000000), 4000000)
+    t5 = min(max(0, b - 8000000), 8000000)
+    t6 = max(0, b - 16000000)
+
+    dist_items = []
+    if t1 > 0: dist_items.append(f"99-70:{t1}")
+    if t2 > 0: dist_items.append(f"70-50:{t2}")
+    if t3 > 0: dist_items.append(f"50-30:{t3}")
+    if t4 > 0: dist_items.append(f"30-10:{t4}")
+    if t5 > 0: dist_items.append(f"10-1:{t5}")
+    if t6 > 0: dist_items.append(f"<1:{t6}")
+    distribution_str = " | ".join(dist_items) if dist_items else "0"
+
+    compact_shield_display = f"{user_shield_bal} [{tier_range} | {shield_effective_pct}% Impact | Distribution: {distribution_str}]"
+
     return jsonify({
         '1_GLOBAL_DATA': {
             'main_chain_height': blockchain.get_chain_length("MAIN"),
@@ -507,7 +596,15 @@ def full_chain():
             'wallet_address': user_address, 
             'main_coin_balance': blockchain.get_balance(user_address, 'MAIN'),
             'shield_coin_balance': user_shield_bal,
-            'shield_compact_info': compact_shield_display
+            'shield_compact_info': compact_shield_display,
+            'shield_tier_breakdown': {
+                'tier_99_70': t1,
+                'tier_70_50': t2,
+                'tier_50_30': t3,
+                'tier_30_10': t4,
+                'tier_10_1': t5,
+                'tier_below_1': t6
+            }
         }
     }), 200
 
