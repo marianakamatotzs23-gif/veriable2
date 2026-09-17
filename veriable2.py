@@ -11,37 +11,50 @@ import secrets
 
 STORAGE_FILE = "chain_storage.json"
 
-WORD_LIST = [
-    "apple", "river", "mountain", "token", "coin", "node", "block", "chain", 
-    "secure", "miner", "shield", "network", "crypto", "digital", "ledger", 
-    "protocol", "hash", "proof", "work", "stake", "wallet", "address", 
-    "private", "public", "key", "transfer", "supply", "limit", "burn", "gas"
-]
-
-def generate_mnemonic_wallet():
-    chosen_words = [secrets.choice(WORD_LIST) for _ in range(12)]
-    mnemonic_phrase = " ".join(chosen_words)
-    seed_bytes = hashlib.sha256(mnemonic_phrase.encode()).digest()
-    sk = ecdsa.SigningKey.from_string(seed_bytes, curve=ecdsa.SECP256k1)
+def generate_master_wallet():
+    """
+    Bitcoin standardında 256-bit kriptografik özel anahtar (SECP256k1) üretir.
+    Toplam anahtar uzayı: 2^256 ihtimal (~1.1579 x 10^77).
+    Matematiksel olarak brute-force ile tahmin edilmesi veya kırılması imkânsızdır.
+    """
+    priv_bytes = secrets.token_bytes(32)
+    sk = ecdsa.SigningKey.from_string(priv_bytes, curve=ecdsa.SECP256k1)
     vk = sk.verifying_key
     return {
-        'mnemonic': mnemonic_phrase,
         'private_key': sk.to_string().hex(),
         'public_key': vk.to_string().hex()
     }
 
-def wallet_from_mnemonic(mnemonic_phrase):
-    seed_bytes = hashlib.sha256(mnemonic_phrase.strip().encode()).digest()
-    sk = ecdsa.SigningKey.from_string(seed_bytes, curve=ecdsa.SECP256k1)
-    vk = sk.verifying_key
-    return sk.to_string().hex(), vk.to_string().hex()
+def wallet_from_private_key(private_key_hex):
+    """
+    Cüzdanı 64 karakterlik 256-bit onaltılık (hex) anahtardan doğrular ve yükler.
+    Hatalı uzunluk, geçersiz karakter veya eğri dışı değerleri kesin olarak reddeder.
+    """
+    clean_hex = str(private_key_hex).strip().lower()
+    if len(clean_hex) != 64:
+        return None, None, f"Geçersiz anahtar uzunluğu ({len(clean_hex)} karakter). Özel anahtar tam 64 onaltılık (hex) karakter olmalıdır."
+    try:
+        key_int = int(clean_hex, 16)
+        curve_order = ecdsa.SECP256k1.order
+        if key_int <= 0 or key_int >= curve_order:
+            return None, None, "Geçersiz skaler: Değer SECP256k1 eliptik eğri parametre sınırlarının dışındadır."
+        sk = ecdsa.SigningKey.from_string(bytes.fromhex(clean_hex), curve=ecdsa.SECP256k1)
+        vk = sk.verifying_key
+        return sk.to_string().hex(), vk.to_string().hex(), None
+    except ValueError:
+        return None, None, "Biçim hatası: Özel anahtar sadece geçerli hex karakterleri (0-9, a-f) içerebilir."
+    except Exception as e:
+        return None, None, f"Kriptografik doğrulama hatası: {str(e)}"
 
 def verify_key_match(private_key_hex, public_key_hex):
     if not private_key_hex or not public_key_hex:
         return False
     try:
-        sk = ecdsa.SigningKey.from_string(bytes.fromhex(private_key_hex), curve=ecdsa.SECP256k1)
-        return sk.verifying_key.to_string().hex() == public_key_hex
+        clean_hex = str(private_key_hex).strip().lower()
+        if len(clean_hex) != 64:
+            return False
+        sk = ecdsa.SigningKey.from_string(bytes.fromhex(clean_hex), curve=ecdsa.SECP256k1)
+        return sk.verifying_key.to_string().hex() == str(public_key_hex).strip().lower()
     except Exception:
         return False
 
@@ -68,10 +81,10 @@ class InfiniteVariableSearchEngine:
 
 class ResilientVariableStorageEngine:
     """
-    1-99 State Engine:
-    Data is never erased (never reaches 0%). 
-    When pruned, power drops to base anchor 1.0 (1%). 
-    When restored, it remains quarantined at 1.0 until verified and elevated back to 99.0.
+    1-99 Durum Motoru:
+    Veri sistem çalışırken asla yok edilmez (%0 olmaz).
+    Budandığında taban kanıt seviyesi %1'e (1.0) çekilir.
+    Geri yüklendiğinde doğrulanana kadar %1 karantinada tutulur, SHA-256 sağlaması geçince %99'a çıkar.
     """
     def __init__(self):
         self.matrix_blocks = {}
@@ -89,37 +102,37 @@ class ResilientVariableStorageEngine:
     def soft_prune_block(self, block_index):
         idx = int(block_index)
         if idx not in self.matrix_blocks:
-            return False, "Block not found."
+            return False, "Blok bulunamadı."
 
         block = self.matrix_blocks[idx]
         block['archived_payload'] = block.get('transactions', [])
         block['transactions'] = []
         block['power_scale'] = 1.0
         block['status'] = "BASE_LOCKED"
-        return True, f"Block {idx} pruned to 1% baseline anchor."
+        return True, f"Blok {idx} %1 taban seviyesine çekilerek kilitlendi."
 
     def request_restore_block(self, block_index):
         idx = int(block_index)
         if idx not in self.matrix_blocks:
-            return False, "Block not found."
+            return False, "Blok bulunamadı."
 
         block = self.matrix_blocks[idx]
         if block['status'] != "BASE_LOCKED":
-            return False, "Block is not in a base-locked state."
+            return False, "Blok taban kilitli durumda değil."
 
         block['transactions'] = block.get('archived_payload', [])
         block['status'] = "RESTORE_PENDING"
         block['power_scale'] = 1.0
-        return True, f"Block {idx} retrieved in quarantined state (1%). Awaiting system verification."
+        return True, f"Blok {idx} %1 karantina durumunda getirildi. Doğrulama bekleniyor."
 
     def system_validate_and_elevate(self, block_index):
         idx = int(block_index)
         if idx not in self.matrix_blocks:
-            return False, "Block not found."
+            return False, "Blok bulunamadı."
 
         block = self.matrix_blocks[idx]
         if block['status'] != "RESTORE_PENDING":
-            return False, "Block is not awaiting validation."
+            return False, "Blok doğrulama beklemiyor."
 
         current_tx_serialized = json.dumps(block.get('transactions', []), sort_keys=True)
         current_hash = hashlib.sha256(current_tx_serialized.encode()).hexdigest()
@@ -127,12 +140,12 @@ class ResilientVariableStorageEngine:
         if current_hash == block.get('data_snapshot_hash'):
             block['power_scale'] = 99.0
             block['status'] = "ACTIVE"
-            return True, f"Verification successful. Block {idx} restored to 99% full power."
+            return True, f"Doğrulama başarılı. Blok {idx} %99 güce yükseltildi."
         else:
             block['power_scale'] = 1.0
             block['status'] = "BASE_LOCKED"
             block['transactions'] = []
-            return False, "Hash mismatch. Block remains locked at 1% baseline."
+            return False, "Hash uyuşmazlığı. Blok %1 taban seviyesinde kilitli kalmaya devam ediyor."
 
     @property
     def main_block_lookup(self):
@@ -191,7 +204,7 @@ class Blockchain(object):
             with open(STORAGE_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.storage.to_dict(), f, indent=2)
         except Exception as e:
-            print(f"Disk save error: {e}")
+            print(f"Disk yazma hatası: {e}")
 
     def load_from_disk(self):
         if os.path.exists(STORAGE_FILE):
@@ -200,7 +213,7 @@ class Blockchain(object):
                     data = json.load(f)
                     self.storage.load_from_dict(data)
             except Exception as e:
-                print(f"Disk load error: {e}")
+                print(f"Disk okuma hatası: {e}")
 
     def get_chain_length(self, coin_type="MAIN"):
         lookup = self.storage.main_block_lookup if coin_type == "MAIN" else self.storage.alt_block_lookup
@@ -244,14 +257,14 @@ class Blockchain(object):
         try:
             amount = int(float(amount))
         except Exception:
-            return False, "Invalid amount parameter"
+            return False, "Geçersiz miktar parametresi"
             
         if amount <= 0:
-            return False, "Amount must be strictly greater than zero"
+            return False, "Miktar sıfırdan büyük olmalıdır"
             
         with self.lock:
             if sender != "0" and self.get_balance(sender, coin_type, True) < amount:
-                return False, "Insufficient balance"
+                return False, "Yetersiz bakiye"
             
             target_txs = self.current_main_transactions if coin_type == "MAIN" else self.current_alt_transactions
             target_txs.append({
@@ -353,12 +366,12 @@ class Blockchain(object):
             progress = (alt_mined - 4000000) / 4000000.0
             power = 30.0 - (progress * 20.0)
             
-        # Tier 5: 8,000,000 - 16,000,000 Coin (10 -> 1 | Medium Speed)
+        # Tier 5: 8,000,000 - 16,000,000 Coin (10 -> 1 | Orta Hız)
         elif alt_mined <= 16000000:
             progress = (alt_mined - 8000000) / 8000000.0
             power = 10.0 - (progress * 9.0)
             
-        # Tier 6: 16,000,000+ Coin (1 -> 0.00001 Asymptotic Floor)
+        # Tier 6: 16,000,000+ Coin (1 -> 0.00001 Asimptotik Taban)
         else:
             extra = alt_mined - 16000000
             power = max(0.00001, 1.0 / (1.0 + (extra / 10000000.0)))
@@ -380,14 +393,14 @@ def home():
 
 @app.route('/wallet/new', methods=['GET'])
 def new_wallet():
-    return jsonify(generate_mnemonic_wallet()), 200
+    return jsonify(generate_master_wallet()), 200
 
 @app.route('/wallet/recover', methods=['POST'])
 def recover_wallet():
-    mnemonic = request.get_json().get('mnemonic', '')
-    if not mnemonic or len(mnemonic.split()) < 12:
-        return jsonify({'error': 'Invalid 12-word seed phrase'}), 400
-    priv, pub = wallet_from_mnemonic(mnemonic)
+    priv_hex = request.get_json().get('private_key', '')
+    priv, pub, error = wallet_from_private_key(priv_hex)
+    if error:
+        return jsonify({'error': error}), 400
     return jsonify({'private_key': priv, 'public_key': pub}), 200
 
 @app.route('/mine', methods=['GET'])
@@ -395,7 +408,7 @@ def mine():
     miner_address = request.args.get('address')
     selected_coin = request.args.get('coin', default='MAIN').upper()
     if not miner_address or len(miner_address) < 20:
-        return jsonify({'error': 'Invalid miner address'}), 400
+        return jsonify({'error': 'Geçersiz madenci adresi'}), 400
 
     coin_type_key = blockchain.sub_coin_name if selected_coin == "ALT" else "MAIN"
     last_block = blockchain.get_last_block(coin_type_key)
@@ -405,7 +418,7 @@ def mine():
         mining_difficulty = blockchain.get_mining_power_main(miner_address)
         target_power = mining_difficulty
         if mining_difficulty <= 0.0 or blockchain.get_total_mined("MAIN") >= blockchain.get_effective_max_supply(miner_address):
-            return jsonify({'message': 'Main coin supply cap reached.'}), 400
+            return jsonify({'message': 'Main coin maksimum arza ulaştı.'}), 400
     else:
         mining_difficulty = blockchain.get_mining_power_shield(miner_address)
         target_power = blockchain.get_shield_impact_power()
@@ -419,11 +432,11 @@ def mine():
     if coin_type_key == "MAIN":
         reward = max(1, int(blockchain.BASE_MAIN_REWARD * max(0.01, mining_difficulty / 99.0)))
         blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type="MAIN")
-        earned = f"{reward} Main Coin (Target Power: {target_power} | Mining Attempts: {attempts})"
+        earned = f"{reward} Main Coin (Hedef Güç: {target_power} | Deneme Sayısı: {attempts})"
     else:
         reward = 1 
         blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type=blockchain.sub_coin_name)
-        earned = f"{reward} Shield Coin (Mining Difficulty Power: {mining_difficulty} | Protocol Impact Power: {target_power} | Matrix Attempts: {attempts})"
+        earned = f"{reward} Shield Coin (Zorluk Gücü: {mining_difficulty} | Protokol Etki Gücü: {target_power} | Deneme Sayısı: {attempts})"
 
     block = blockchain.mint_block(
         proof=attempts, 
@@ -448,7 +461,7 @@ def protocol_action():
     scope = data.get('scope', 'personal')
 
     if not address or not private_key or not verify_key_match(private_key, address):
-        return jsonify({'error': 'Access denied: Key verification failure'}), 403
+        return jsonify({'error': 'Erişim reddedildi: 256-bit kriptografik imza uyuşmazlığı.'}), 403
 
     user_balance = blockchain.get_balance(address, blockchain.sub_coin_name, True)
 
@@ -457,18 +470,18 @@ def protocol_action():
         try:
             alt_percentage = float(alt_percentage)
         except ValueError:
-            return jsonify({'error': 'Percentage must be numeric'}), 400
+            return jsonify({'error': 'Yüzde sayısal olmalıdır'}), 400
         if alt_percentage <= 0 or alt_percentage > 100:
-            return jsonify({'error': 'Percentage must be between 1 and 100'}), 400
+            return jsonify({'error': 'Yüzde 1 ile 100 arasında olmalıdır'}), 400
         alt_amount = int((user_balance * alt_percentage) / 100.0)
     else:
         try:
             alt_amount = int(float(data.get('alt_amount', 0)))
         except ValueError:
-            return jsonify({'error': 'Amount must be numeric'}), 400
+            return jsonify({'error': 'Miktar sayısal olmalıdır'}), 400
 
     if alt_amount <= 0 or user_balance < alt_amount:
-        return jsonify({'error': 'Insufficient balance or invalid token quantity'}), 400
+        return jsonify({'error': 'Yetersiz bakiye veya geçersiz token miktarı'}), 400
 
     impact_multiplier = blockchain.get_alt_impact_power_percentage()
     effective_power = alt_amount * impact_multiplier
@@ -490,46 +503,46 @@ def protocol_action():
             burned_qty = max(1, int(effective_power * 100))
             if scope == "global":
                 blockchain.burned_main_coins += burned_qty
-                message = f"[GLOBAL] Supply burned: {burned_qty} Main units removed globally"
+                message = f"[GLOBAL] Toplam arz yakıldı: {burned_qty} Main Coin küresel olarak silindi"
             else:
                 stats['personal_burned'] += burned_qty
-                message = f"[PERSONAL] Supply burned: {burned_qty} Main units deducted from personal quota"
+                message = f"[PERSONAL] Kişisel arz düşürüldü: {burned_qty} Main Coin kotasından düşüldü"
 
         elif action == "expand_supply":
             expand_qty = max(1, int(effective_power * 150))
             if scope == "global":
                 blockchain.dynamic_supply_offset = min(blockchain.supply_variance_limit, blockchain.dynamic_supply_offset + expand_qty)
-                message = f"[GLOBAL] Capacity expanded: Global limit extended by +{expand_qty}"
+                message = f"[GLOBAL] Kapasite genişletildi: Küresel limit +{expand_qty} artırıldı"
             else:
                 stats['personal_supply_offset'] += expand_qty
-                message = f"[PERSONAL] Capacity expanded: Personal limit extended by +{expand_qty}"
+                message = f"[PERSONAL] Kişisel kapasite genişletildi: Kişisel limit +{expand_qty} artırıldı"
 
         elif action == "boost_price":
             boost_val = round(min(5.0, effective_power * 0.5), 2)
             if scope == "global":
                 blockchain.market_boost_bonus = boost_val
-                message = f"[GLOBAL] Dynamic coefficient adjusted upwards by +{boost_val}%"
+                message = f"[GLOBAL] Dinamik katsayı +%{boost_val} oranında yükseltildi"
             else:
                 stats['personal_boost'] = boost_val
-                message = f"[PERSONAL] Wallet dynamic coefficient boosted by +{boost_val}%"
+                message = f"[PERSONAL] Cüzdan dinamik katsayısı +%{boost_val} oranında artırıldı"
 
         elif action == "discount_price":
             reduction_val = round(min(5.0, effective_power * 0.5), 2)
             if scope == "global":
                 blockchain.market_boost_bonus = -reduction_val
-                message = f"[GLOBAL] Discount mode active: Adjusted by -{reduction_val}%"
+                message = f"[GLOBAL] İndirim modu devrede: Katsayı -%{reduction_val} uygulandı"
             else:
                 stats['personal_boost'] = -reduction_val
-                message = f"[PERSONAL] Wallet discount applied: -{reduction_val}%"
+                message = f"[PERSONAL] Cüzdana indirim katsayısı uygulandı: -%{reduction_val}"
 
         elif action == "peg_static":
             if scope == "global":
                 blockchain.market_peg_active = True
                 blockchain.market_boost_bonus = 0.0
-                message = "[GLOBAL] Reference valuation locked and pegged"
+                message = "[GLOBAL] Fiyat referansı kilitlendi ve sabitlendi"
             else:
                 stats['personal_boost'] = 0.0
-                message = "[PERSONAL] Wallet parameters pegged and stabilized"
+                message = "[PERSONAL] Cüzdan parametreleri sabitlendi"
 
     impact_pct = round(impact_multiplier * 99.0, 6)
     return jsonify({
@@ -550,21 +563,21 @@ def full_chain():
     user_shield_bal = blockchain.get_balance(user_address, blockchain.sub_coin_name)
 
     if shield_impact_power >= 70.0:
-        tier_range = "99-70% Range"
+        tier_range = "99-70% Aralığı"
     elif shield_impact_power >= 50.0:
-        tier_range = "70-50% Range"
+        tier_range = "70-50% Aralığı"
     elif shield_impact_power >= 30.0:
-        tier_range = "50-30% Range"
+        tier_range = "50-30% Aralığı"
     elif shield_impact_power >= 10.0:
-        tier_range = "30-10% Range"
+        tier_range = "30-10% Aralığı"
     elif shield_impact_power >= 1.0:
-        tier_range = "10-1% Range"
+        tier_range = "10-1% Aralığı"
     else:
-        tier_range = "<1% Floor (0.00001)"
+        tier_range = "<1% Taban (0.00001)"
 
     shield_effective_pct = round((shield_impact_power / 99.0) * 100.0, 4)
 
-    # 6-Tier Wallet Balance Distribution
+    # 6 Kademeli Cüzdan Dağılım Hesaplaması
     b = int(user_shield_bal)
     t1 = min(b, 1000)
     t2 = min(max(0, b - 1000), 9000)
@@ -582,14 +595,14 @@ def full_chain():
     if t6 > 0: dist_items.append(f"<1:{t6}")
     distribution_str = " | ".join(dist_items) if dist_items else "0"
 
-    compact_shield_display = f"{user_shield_bal} [{tier_range} | {shield_effective_pct}% Impact | Distribution: {distribution_str}]"
+    compact_shield_display = f"{user_shield_bal} [{tier_range} | {shield_effective_pct}% Etki | Dağılım: {distribution_str}]"
 
     return jsonify({
         '1_GLOBAL_DATA': {
             'main_chain_height': blockchain.get_chain_length("MAIN"),
             'alt_chain_height': blockchain.get_chain_length(blockchain.sub_coin_name),
             'main_coin_supply': f"{blockchain.get_total_mined('MAIN')} / {blockchain.get_effective_max_supply(user_address)}",
-            'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Active, Burned: {burned_alt})",
+            'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Aktif, Yakılan: {burned_alt})",
             'impact_power': f"{shield_impact_power}"
         },
         '2_USER_DATA': {
