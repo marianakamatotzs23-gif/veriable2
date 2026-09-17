@@ -243,7 +243,7 @@
     <div class="header">
         <div>
             <h1 style="font-size: 22px;">Variable Coin Protocol Center</h1>
-            <p style="color: #8b949e; margin: 0; font-size: 13px;">Infinite Variable Protocol Hub</p>
+            <p style="color: #8b949e; margin: 0; font-size: 13px;">Bitcoin Seviyesi 256-Bit Kriptografik Protokol Merkezi</p>
         </div>
         <div class="header-controls">
             <div id="google_translate_element"></div>
@@ -263,37 +263,40 @@
         </div>
     </div>
 
-    <!-- VARIABLE COMMAND CENTER -->
+    <!-- COMMAND CENTER -->
     <div class="card shield-center">
         <h2 style="color: #a371f7 !important;">Variable Coin Command Center</h2>
-        <p style="color: #8b949e; font-size: 13px;">Burn Shield tokens to modulate protocol parameters dynamically.</p>
+        <p style="color: #8b949e; font-size: 13px;">Protokol parametrelerini 256-bit imzanız ve Shield Coin ile modüle edin.</p>
 
-        <label class="stat-label">Wallet Address (Public Key):</label>
+        <label class="stat-label">Cüzdan Adresi (Public Key):</label>
         <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="text" id="cmd-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
+            <input type="text" id="cmd-addr" placeholder="Cüzdan adresinizi girin..." style="margin-bottom: 0; flex: 1;">
             <button class="btn-blue" onclick="pasteToInput('cmd-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
         </div>
 
-        <label class="stat-label" style="color: #da3633 !important; margin-top: 14px; display: block;">Signature (Private Key):</label>
-        <input type="password" id="cmd-priv" placeholder="Enter private key...">
+        <label class="stat-label" style="color: #da3633 !important; margin-top: 14px; display: block;">256-Bit Master Özel Anahtar (İmza):</label>
+        <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="password" id="cmd-priv" placeholder="64 karakterlik özel anahtarı girin..." style="margin-bottom: 0; flex: 1;">
+            <button class="btn-blue" onclick="pasteToInput('cmd-priv', this)" style="width: auto; padding: 12px 14px; margin: 0; background-color: #da3633;">PASTE</button>
+        </div>
 
-        <label class="stat-label">Select Scope:</label>
+        <label class="stat-label" style="margin-top: 14px; display: block;">Uygulama Alanı (Scope):</label>
         <select id="cmd-scope">
-            <option value="personal">[PERSONAL] Apply modifications only to my wallet</option>
-            <option value="global">[GLOBAL] Apply modifications to the entire network</option>
+            <option value="personal">[PERSONAL] Değişiklikleri sadece kendi cüzdanıma uygula</option>
+            <option value="global">[GLOBAL] Değişiklikleri tüm ağ geneline uygula</option>
         </select>
 
         <div class="action-grid">
-            <div class="action-box" onclick="selectAction('peg_static', this)">⚖️ PEG PRICE<br><small>Stabilize effective valuation</small></div>
-            <div class="action-box" onclick="selectAction('boost_price', this)">📈 BOOST PRICE<br><small>Increase effective coefficient</small></div>
-            <div class="action-box" onclick="selectAction('discount_price', this)">📉 DISCOUNT PRICE<br><small>Apply discount coefficient</small></div>
-            <div class="action-box" onclick="selectAction('burn_main', this)">🔥 BURN SUPPLY<br><small>Permanently destroy tokens</small></div>
-            <div class="action-box" onclick="selectAction('expand_supply', this)">📦 EXPAND CAPACITY<br><small>Increase maximum ceiling</small></div>
+            <div class="action-box" onclick="selectAction('peg_static', this)">⚖️ PEG PRICE<br><small>Değeri sabitle</small></div>
+            <div class="action-box" onclick="selectAction('boost_price', this)">📈 BOOST PRICE<br><small>Katsayıyı artır</small></div>
+            <div class="action-box" onclick="selectAction('discount_price', this)">📉 DISCOUNT PRICE<br><small>İndirim uygula</small></div>
+            <div class="action-box" onclick="selectAction('burn_main', this)">🔥 BURN SUPPLY<br><small>Tokenları kalıcı yok et</small></div>
+            <div class="action-box" onclick="selectAction('expand_supply', this)">📦 EXPAND CAPACITY<br><small>Maksimum tavanı artır</small></div>
         </div>
 
-        <label class="stat-label">Shield Usage Ratio (%): <span id="pct-val" style="color: #58a6ff; font-weight: bold;">100</span>%</label>
+        <label class="stat-label">Shield Kullanım Oranı (%): <span id="pct-val" style="color: #58a6ff; font-weight: bold;">100</span>%</label>
         <input type="range" id="cmd-percentage" min="1" max="100" value="100" oninput="document.getElementById('pct-val').innerText = this.value" style="margin-top: 6px; cursor: pointer;">
-        <p style="color: #8b949e; font-size: 11px; margin-top: -8px; margin-bottom: 14px;">Select percentage of balance to burn. Retained balance remains stored in the wallet.</p>
+        <p style="color: #8b949e; font-size: 11px; margin-top: -8px; margin-bottom: 14px;">Yakılacak bakiye yüzdesini seçin. Kalan bakiye cüzdanınızda saklı kalır.</p>
 
         <button class="btn-purple" onclick="executeCommand()">EXECUTE PROTOCOL ACTION</button>
         <pre id="cmd-log" style="display: none;"></pre>
@@ -303,26 +306,20 @@
     <div class="grid-2">
         <div class="card">
             <h2>Wallet Hub</h2>
-            <button onclick="createWallet()">GENERATE 12-WORD WALLET</button>
+            <button onclick="createWallet()">GENERATE 256-BIT MASTER WALLET</button>
             
             <div id="wallet-keys" style="display: none; margin-top: 15px;">
                 <div style="background-color: rgba(218, 54, 51, 0.1); color: #da3633; padding: 10px; border: 1px solid #da3633; border-radius: 5px; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 12px;">
-                    WARNING: Store your mnemonic recovery phrase and private key offline securely.
-                </div>
-
-                <label class="stat-label">12-Word Recovery Phrase:</label>
-                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
-                    <textarea id="disp-seed" rows="2" readonly style="font-weight: bold; color: #a371f7 !important; resize: none; flex: 1; margin: 0;"></textarea>
-                    <button class="btn-purple" onclick="copyInputField('disp-seed', this)" style="width: auto; padding: 8px 14px; margin: 0;">COPY</button>
+                    KRİTİK UYARI: 64 karakterlik 256-bit Özel Anahtarınızı güvenli, şifreli bir arşivde saklayın. Bu anahtara sahip olan cüzdanın tek sahibidir.
                 </div>
                 
-                <label class="stat-label" style="display: block;">Wallet Address (Public Key):</label>
+                <label class="stat-label" style="display: block;">Cüzdan Adresi (Public Key):</label>
                 <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
                     <pre id="disp-pub" style="flex: 1; margin: 0;"></pre>
                     <button class="btn-blue" onclick="copyTextContent('disp-pub', this)" style="width: auto; padding: 8px 14px; margin: 0;">COPY</button>
                 </div>
                 
-                <label class="stat-label" style="display: block; color: #da3633 !important;">Private Key (Authorization):</label>
+                <label class="stat-label" style="display: block; color: #da3633 !important;">256-Bit Master Özel Anahtar (64 Karakter Hex):</label>
                 <div style="display: flex; gap: 8px; align-items: center;">
                     <pre id="disp-priv-key" style="color: #da3633 !important; flex: 1; margin: 0;"></pre>
                     <button class="btn-blue" onclick="copyTextContent('disp-priv-key', this)" style="width: auto; padding: 8px 14px; margin: 0; background-color: #da3633;">COPY</button>
@@ -331,16 +328,20 @@
 
             <hr style="border-color: #30363d; margin: 20px 0;">
             
-            <h3>Recover Existing Wallet</h3>
-            <textarea id="rec-seed" rows="2" placeholder="Enter 12-word mnemonic phrase..."></textarea>
-            <button class="btn-purple" onclick="recoverWallet()">RESTORE WALLET</button>
+            <h3>Mevcut Cüzdanı Yükle</h3>
+            <label class="stat-label">64 Karakterlik Özel Anahtarınızı Girin:</label>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <input type="text" id="rec-priv" placeholder="64 karakterlik anahtarı buraya yapıştırın..." style="margin-bottom: 0; flex: 1;">
+                <button class="btn-blue" onclick="pasteToInput('rec-priv', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
+            </div>
+            <button class="btn-purple" onclick="recoverWallet()" style="margin-top: 14px;">RESTORE & VALIDATE WALLET</button>
 
             <hr style="border-color: #30363d; margin: 20px 0;">
             
-            <h3>Ledger Balance Query</h3>
-            <label class="stat-label">Wallet Address:</label>
+            <h3>Bakiye Sorgulama</h3>
+            <label class="stat-label">Cüzdan Adresi:</label>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="chk-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="chk-addr" placeholder="Cüzdan adresi girin..." style="margin-bottom: 0; flex: 1;">
                 <button class="btn-blue" onclick="pasteToInput('chk-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
             </div>
             <button class="btn-blue" onclick="checkBalance(true)" style="margin-top: 14px;">QUERY LEDGER</button>
@@ -348,7 +349,7 @@
                 <div class="stat-row"><span class="stat-label">MAIN COIN:</span><span id="bal-main" class="stat-val">0</span></div>
                 <div class="stat-row" style="margin-top: 8px;"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: #a371f7 !important;">0</span></div>
                 
-                <!-- 6-TIER BREAKDOWN CARDS -->
+                <!-- 6 KADEMELİ DAĞILIM KARTLARI -->
                 <div class="tier-breakdown-box" id="tier-container">
                     <div class="tier-card">
                         <div class="tier-title">%99-70 (0-1K)</div>
@@ -380,18 +381,18 @@
 
         <div class="card">
             <h2>Mining Hub</h2>
-            <p style="color: #8b949e; font-size: 13px;">Proof-of-work resolved across infinite variable matrix.</p>
+            <p style="color: #8b949e; font-size: 13px;">Sonsuz değişken matrisinde Proof-of-work kazımı.</p>
             
-            <label class="stat-label">Miner Address:</label>
+            <label class="stat-label">Madenci Adresi:</label>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="mine-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="mine-addr" placeholder="Cüzdan adresi girin..." style="margin-bottom: 0; flex: 1;">
                 <button class="btn-blue" onclick="pasteToInput('mine-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
             </div>
 
-            <label class="stat-label" style="margin-top: 14px; display: block;">Target Asset:</label>
+            <label class="stat-label" style="margin-top: 14px; display: block;">Hedef Varlık:</label>
             <select id="mine-type">
-                <option value="MAIN">MAIN COIN (Fixed 21M Base Supply)</option>
-                <option value="ALT">SHIELD COIN (Infinite Matrix Utility Token)</option>
+                <option value="MAIN">MAIN COIN (Sabit 21M Taban Arz)</option>
+                <option value="ALT">SHIELD COIN (Sonsuz Matris Protokol Tokenı)</option>
             </select>
 
             <button id="btn-mine" class="btn-blue" onclick="startMining()">DISPATCH MINER</button>
@@ -432,45 +433,43 @@
             document.getElementById('stat-main').innerText = data["1_GLOBAL_DATA"]?.["main_coin_supply"] || "-";
             document.getElementById('stat-alt').innerText = data["1_GLOBAL_DATA"]?.["shield_coin_circulating"] || "-";
             document.getElementById('stat-impact').innerText = data["1_GLOBAL_DATA"]?.["impact_power"] || "99.0";
-        } catch (e) { console.error("API error:", e); }
+        } catch (e) { console.error("API hatası:", e); }
     }
 
     async function createWallet() {
         const res = await fetch(`${API}/wallet/new`);
         const data = await res.json();
-        document.getElementById('disp-seed').value = data.mnemonic;
         document.getElementById('disp-pub').innerText = data.public_key;
         document.getElementById('disp-priv-key').innerText = data.private_key; 
         document.getElementById('wallet-keys').style.display = 'block';
     }
 
     async function recoverWallet() {
-        const mnemonic = document.getElementById('rec-seed').value.trim();
-        if (!mnemonic) return alert("Please supply the 12-word recovery mnemonic.");
+        const privKey = document.getElementById('rec-priv').value.trim();
+        if (!privKey) return alert("Lütfen 64 karakterlik 256-bit Özel Anahtarınızı girin.");
 
         try {
             const res = await fetch(`${API}/wallet/recover`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ mnemonic: mnemonic })
+                body: JSON.stringify({ private_key: privKey })
             });
             const data = await res.json();
             if (data.public_key) {
-                document.getElementById('disp-seed').value = mnemonic;
                 document.getElementById('disp-pub').innerText = data.public_key;
                 document.getElementById('disp-priv-key').innerText = data.private_key;
                 document.getElementById('wallet-keys').style.display = 'block';
-                alert("Wallet verification and recovery complete.");
+                alert("Kriptografik doğrulama başarılı: Cüzdan yüklendi.");
             } else {
-                alert(data.error || "Mnemonic recovery failed.");
+                alert(data.error || "Doğrulama başarısız: Geçersiz anahtar.");
             }
-        } catch (e) { alert("Network communication error."); }
+        } catch (e) { alert("Sunucu ile iletişim hatası oluştu."); }
     }
 
     async function checkBalance(isManual = false) {
         let addr = document.getElementById('chk-addr').value.trim();
         if (!addr) {
-            if (isManual) alert("Please enter a valid wallet address.");
+            if (isManual) alert("Lütfen geçerli bir cüzdan adresi girin.");
             document.getElementById('balance-res').style.display = 'none';
             return;
         }
@@ -492,7 +491,7 @@
 
             document.getElementById('balance-res').style.display = 'block';
         } catch(e) {
-            if (isManual) alert("Failed to fetch wallet balances.");
+            if (isManual) alert("Bakiye sorgulanamadı.");
         }
     }
 
@@ -502,12 +501,12 @@
         const btn = document.getElementById('btn-mine');
         const log = document.getElementById('mine-log');
 
-        if (!addr) return alert("Please enter a valid miner address.");
+        if (!addr) return alert("Lütfen geçerli bir madenci adresi girin.");
 
         btn.disabled = true; 
-        btn.innerText = "MINING IN PROGRESS...";
+        btn.innerText = "KAZIM YAPILIYOR...";
         log.style.display = "block"; 
-        log.innerText = "Searching infinite variable matrix space...";
+        log.innerText = "Sonsuz değişken matrisinde aranıyor...";
 
         try {
             const data = await (await fetch(`${API}/mine?address=${addr}&coin=${coin}`)).json();
@@ -515,7 +514,7 @@
             refreshNetwork(); 
             checkBalance(false);
         } catch (e) { 
-            log.innerText = "Mining cycle error occurred."; 
+            log.innerText = "Kazım döngüsünde hata oluştu."; 
         } finally { 
             btn.disabled = false; 
             btn.innerText = "DISPATCH MINER"; 
@@ -530,11 +529,11 @@
         const scope = document.getElementById('cmd-scope').value;
 
         if (!addr || !privKey || !activeAction || isNaN(percentage)) {
-            return alert("Please select an action type and enter keys alongside a valid percentage.");
+            return alert("Lütfen işlem türü seçin, geçerli anahtarlar ve yüzde girin.");
         }
 
         log.style.display = "block";
-        log.innerText = "Broadcasting protocol mutation...";
+        log.innerText = "Protokol mutasyonu ağa iletiliyor...";
 
         try {
             const res = await fetch(`${API}/protocol/act`, {
@@ -551,7 +550,7 @@
             log.innerText = JSON.stringify(await res.json(), null, 2);
             refreshNetwork(); 
             checkBalance(false);
-        } catch (e) { log.innerText = "Execution failed."; }
+        } catch (e) { log.innerText = "İşlem başarısız oldu."; }
     }
 
     function copyToClipboard(text, btn) {
@@ -581,7 +580,7 @@
             document.execCommand('copy');
             showSuccess(btn, "COPIED");
         } catch (err) {
-            console.error('Fallback copy error:', err);
+            console.error('Kopyalama hatası:', err);
         }
         document.body.removeChild(textArea);
     }
@@ -592,11 +591,6 @@
             btn.innerText = message;
             setTimeout(() => { btn.innerText = old; }, 1200);
         }
-    }
-
-    function copyInputField(elementId, btn) {
-        const el = document.getElementById(elementId);
-        if (el) copyToClipboard(el.value, btn);
     }
 
     function copyTextContent(elementId, btn) {
@@ -614,13 +608,11 @@
                 input.value = text.trim();
                 showSuccess(btn, "PASTED");
                 return;
-            } catch (err) {
-                // Fallback prompt on HTTP or restricted environments
-            }
+            } catch (err) {}
         }
 
         input.focus();
-        const manualText = prompt("Clipboard access restricted. Paste input here (Ctrl+V):");
+        const manualText = prompt("Panodan yapıştırma kısıtlandı. Girişi buraya yapıştırın (Ctrl+V):");
         if (manualText !== null && manualText.trim() !== "") {
             input.value = manualText.trim();
             showSuccess(btn, "PASTED");
