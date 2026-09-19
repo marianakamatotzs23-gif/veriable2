@@ -97,13 +97,13 @@
 
         .grid-2 { 
             display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); 
             gap: 20px; 
         }
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 12px;
         }
 
@@ -130,31 +130,66 @@
             word-break: break-all;
         }
 
-        .tier-breakdown-box {
-            margin-top: 10px;
+        .tier-inventory-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-            gap: 8px;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
         }
 
-        .tier-card {
+        .tier-box {
             background-color: #010409;
             border: 1px solid #30363d;
-            border-radius: 6px;
-            padding: 8px;
+            border-radius: 8px;
+            padding: 10px;
             text-align: center;
+            position: relative;
         }
 
-        .tier-title {
-            font-size: 10px;
-            color: #8b949e !important;
+        .tier-box.t1 { border-color: #238636; background-color: rgba(35, 134, 54, 0.1); }
+        .tier-box.t2 { border-color: #1f6feb; background-color: rgba(31, 111, 235, 0.1); }
+        .tier-box.t3 { border-color: #d29922; background-color: rgba(210, 153, 34, 0.1); }
+        .tier-box.t4 { border-color: #db6d28; background-color: rgba(219, 109, 40, 0.1); }
+        .tier-box.t5 { border-color: #8957e5; background-color: rgba(137, 87, 229, 0.1); }
+        .tier-box.t6 { border-color: #484f58; background-color: rgba(72, 79, 88, 0.1); }
+
+        .tier-box-title {
+            font-size: 11px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .tier-box-count {
+            font-size: 18px;
+            font-weight: bold;
             margin-bottom: 4px;
         }
 
-        .tier-count {
-            font-size: 13px;
+        .tier-box-avg {
+            font-size: 10px;
+            color: #8b949e !important;
+        }
+
+        .token-tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            max-height: 120px;
+            overflow-y: auto;
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #010409;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+        }
+
+        .token-tag {
+            background-color: #21262d;
+            border: 1px solid #388bfd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
             font-weight: bold;
-            color: #a371f7 !important;
         }
 
         input, select, textarea {
@@ -166,15 +201,9 @@
             border: 1px solid #30363d;
             background-color: #010409 !important; 
             color: #ffffff !important; 
-            -webkit-text-fill-color: #ffffff !important;
             caret-color: #58a6ff !important;
             font-size: 14px; 
             outline: none;
-        }
-
-        input::placeholder, textarea::placeholder {
-            color: #6e7681 !important;
-            -webkit-text-fill-color: #6e7681 !important;
         }
 
         button {
@@ -196,7 +225,7 @@
 
         .action-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
             gap: 8px; 
             margin: 15px 0;
         }
@@ -205,12 +234,11 @@
             background-color: #0d1117;
             border: 1px solid #30363d;
             border-radius: 8px;
-            padding: 12px 8px;
+            padding: 10px 6px;
             cursor: pointer;
             text-align: center;
             font-weight: bold;
             font-size: 11px;
-            transition: all 0.2s ease;
         }
 
         .action-box:hover {
@@ -230,7 +258,7 @@
             border-radius: 6px;
             border: 1px solid #30363d;
             color: #f0f6fc !important;
-            max-height: 120px;
+            max-height: 140px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all;
@@ -243,7 +271,7 @@
     <div class="header">
         <div>
             <h1 style="font-size: 22px;">Variable Coin Protocol Center</h1>
-            <p style="color: #8b949e; margin: 0; font-size: 13px;">Bitcoin Seviyesi 256-Bit Kriptografik Protokol Merkezi</p>
+            <p style="color: #8b949e; margin: 0; font-size: 13px;">Bitcoin-Grade 256-Bit Cryptographic Protocol Center</p>
         </div>
         <div class="header-controls">
             <div id="google_translate_element"></div>
@@ -257,46 +285,70 @@
         <div class="stats-grid">
             <div class="stat-row"><span class="stat-label">Main Chain Height:</span><span id="stat-main-height" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Alt Chain Height:</span><span id="stat-alt-height" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Main Coin Supply:</span><span id="stat-main" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Shield Coin Supply:</span><span id="stat-alt" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Current Target Power:</span><span id="stat-impact" class="stat-val" style="color: #a371f7 !important;">-</span></div>
+            <div class="stat-row"><span class="stat-label">Main Coin Total Supply:</span><span id="stat-main" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Shield Coin Circulating:</span><span id="stat-alt" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Current Mint Inception Power:</span><span id="stat-impact" class="stat-val" style="color: #a371f7 !important;">-</span></div>
         </div>
     </div>
 
     <!-- COMMAND CENTER -->
     <div class="card shield-center">
         <h2 style="color: #a371f7 !important;">Variable Coin Command Center</h2>
-        <p style="color: #8b949e; font-size: 13px;">Protokol parametrelerini 256-bit imzanız ve Shield Coin ile modüle edin.</p>
+        <p style="color: #8b949e; font-size: 13px;">Modulate protocol parameters by selectively burning Shield tokens by tier.</p>
 
-        <label class="stat-label">Cüzdan Adresi (Public Key):</label>
+        <label class="stat-label">Wallet Address (Public Key):</label>
         <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="text" id="cmd-addr" placeholder="Cüzdan adresinizi girin..." style="margin-bottom: 0; flex: 1;">
+            <input type="text" id="cmd-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
             <button class="btn-blue" onclick="pasteToInput('cmd-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
         </div>
 
-        <label class="stat-label" style="color: #da3633 !important; margin-top: 14px; display: block;">256-Bit Master Özel Anahtar (İmza):</label>
+        <label class="stat-label" style="color: #da3633 !important; margin-top: 14px; display: block;">256-Bit Master Private Key (Signature):</label>
         <div style="display: flex; gap: 8px; align-items: center;">
-            <input type="password" id="cmd-priv" placeholder="64 karakterlik özel anahtarı girin..." style="margin-bottom: 0; flex: 1;">
+            <input type="password" id="cmd-priv" placeholder="Enter 64-character private key..." style="margin-bottom: 0; flex: 1;">
             <button class="btn-blue" onclick="pasteToInput('cmd-priv', this)" style="width: auto; padding: 12px 14px; margin: 0; background-color: #da3633;">PASTE</button>
         </div>
 
-        <label class="stat-label" style="margin-top: 14px; display: block;">Uygulama Alanı (Scope):</label>
-        <select id="cmd-scope">
-            <option value="personal">[PERSONAL] Değişiklikleri sadece kendi cüzdanıma uygula</option>
-            <option value="global">[GLOBAL] Değişiklikleri tüm ağ geneline uygula</option>
-        </select>
-
-        <div class="action-grid">
-            <div class="action-box" onclick="selectAction('peg_static', this)">⚖️ PEG PRICE<br><small>Değeri sabitle</small></div>
-            <div class="action-box" onclick="selectAction('boost_price', this)">📈 BOOST PRICE<br><small>Katsayıyı artır</small></div>
-            <div class="action-box" onclick="selectAction('discount_price', this)">📉 DISCOUNT PRICE<br><small>İndirim uygula</small></div>
-            <div class="action-box" onclick="selectAction('burn_main', this)">🔥 BURN SUPPLY<br><small>Tokenları kalıcı yok et</small></div>
-            <div class="action-box" onclick="selectAction('expand_supply', this)">📦 EXPAND CAPACITY<br><small>Maksimum tavanı artır</small></div>
+        <!-- SELECTIVE POWER TIER SELECTION -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 14px;">
+            <div>
+                <label class="stat-label" style="color: #58a6ff !important; font-weight: bold;">🎯 Target Power Tier to Burn:</label>
+                <select id="cmd-tier" style="border-color: #58a6ff; font-weight: bold;">
+                    <option value="tier_99_70">🟢 Tier 1 (%99 - %70 Power) Legendary Tokens</option>
+                    <option value="tier_70_50">🔵 Tier 2 (%70 - %50 Power) High Tokens</option>
+                    <option value="tier_50_30">🟡 Tier 3 (%50 - %30 Power) Medium Tokens</option>
+                    <option value="tier_30_10">🟠 Tier 4 (%30 - %10 Power) Low Tokens</option>
+                    <option value="tier_10_1">🟣 Tier 5 (%10 - %1 Power) Weak Tokens</option>
+                    <option value="tier_below_1">⚪ Tier 6 (<%1 Floor) Asymptotic Tokens</option>
+                    <option value="any">🌐 Any / Entire Portfolio</option>
+                </select>
+            </div>
+            <div>
+                <label class="stat-label">Execution Scope:</label>
+                <select id="cmd-scope">
+                    <option value="personal">[PERSONAL] Apply modifications only to my wallet</option>
+                    <option value="global">[GLOBAL] Apply modifications across entire network</option>
+                </select>
+            </div>
         </div>
 
-        <label class="stat-label">Shield Kullanım Oranı (%): <span id="pct-val" style="color: #58a6ff; font-weight: bold;">100</span>%</label>
-        <input type="range" id="cmd-percentage" min="1" max="100" value="100" oninput="document.getElementById('pct-val').innerText = this.value" style="margin-top: 6px; cursor: pointer;">
-        <p style="color: #8b949e; font-size: 11px; margin-top: -8px; margin-bottom: 14px;">Yakılacak bakiye yüzdesini seçin. Kalan bakiye cüzdanınızda saklı kalır.</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+                <label class="stat-label">Exact Quantity to Burn (e.g. 1):</label>
+                <input type="number" id="cmd-burn-count" placeholder="Number of tokens to burn..." min="1">
+            </div>
+            <div>
+                <label class="stat-label">Or Burn by Tier Percentage (%): <span id="pct-val" style="color: #58a6ff;">100</span>%</label>
+                <input type="range" id="cmd-percentage" min="1" max="100" value="100" oninput="document.getElementById('pct-val').innerText = this.value; document.getElementById('cmd-burn-count').value = '';" style="margin-top: 14px; cursor: pointer;">
+            </div>
+        </div>
+
+        <div class="action-grid">
+            <div class="action-box" onclick="selectAction('peg_static', this)">⚖️ PEG PRICE<br><small>Stabilize valuation</small></div>
+            <div class="action-box" onclick="selectAction('boost_price', this)">📈 BOOST PRICE<br><small>Increase coefficient</small></div>
+            <div class="action-box" onclick="selectAction('discount_price', this)">📉 DISCOUNT PRICE<br><small>Apply discount coefficient</small></div>
+            <div class="action-box" onclick="selectAction('burn_main', this)">🔥 BURN SUPPLY<br><small>Destroy supply</small></div>
+            <div class="action-box" onclick="selectAction('expand_supply', this)">📦 EXPAND CAPACITY<br><small>Increase limit</small></div>
+        </div>
 
         <button class="btn-purple" onclick="executeCommand()">EXECUTE PROTOCOL ACTION</button>
         <pre id="cmd-log" style="display: none;"></pre>
@@ -305,22 +357,22 @@
     <!-- WALLET & MINING -->
     <div class="grid-2">
         <div class="card">
-            <h2>Wallet Hub</h2>
+            <h2>Wallet & Inventory Hub</h2>
             <button onclick="createWallet()">GENERATE 256-BIT MASTER WALLET</button>
             
             <div id="wallet-keys" style="display: none; margin-top: 15px;">
                 <div style="background-color: rgba(218, 54, 51, 0.1); color: #da3633; padding: 10px; border: 1px solid #da3633; border-radius: 5px; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 12px;">
-                    KRİTİK UYARI: 64 karakterlik 256-bit Özel Anahtarınızı güvenli, şifreli bir arşivde saklayın. Bu anahtara sahip olan cüzdanın tek sahibidir.
+                    CRITICAL: Store your 64-character 256-bit Private Key offline securely. Anyone with this key controls the wallet.
                 </div>
                 
-                <label class="stat-label" style="display: block;">Cüzdan Adresi (Public Key):</label>
-                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px;">
+                <label class="stat-label">Wallet Address (Public Key):</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                     <pre id="disp-pub" style="flex: 1; margin: 0;"></pre>
                     <button class="btn-blue" onclick="copyTextContent('disp-pub', this)" style="width: auto; padding: 8px 14px; margin: 0;">COPY</button>
                 </div>
                 
-                <label class="stat-label" style="display: block; color: #da3633 !important;">256-Bit Master Özel Anahtar (64 Karakter Hex):</label>
-                <div style="display: flex; gap: 8px; align-items: center;">
+                <label class="stat-label" style="color: #da3633 !important;">256-Bit Private Key (64-Char Hex):</label>
+                <div style="display: flex; gap: 8px;">
                     <pre id="disp-priv-key" style="color: #da3633 !important; flex: 1; margin: 0;"></pre>
                     <button class="btn-blue" onclick="copyTextContent('disp-priv-key', this)" style="width: auto; padding: 8px 14px; margin: 0; background-color: #da3633;">COPY</button>
                 </div>
@@ -328,71 +380,83 @@
 
             <hr style="border-color: #30363d; margin: 20px 0;">
             
-            <h3>Mevcut Cüzdanı Yükle</h3>
-            <label class="stat-label">64 Karakterlik Özel Anahtarınızı Girin:</label>
+            <h3>Restore Existing Wallet</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="rec-priv" placeholder="64 karakterlik anahtarı buraya yapıştırın..." style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="rec-priv" placeholder="Paste 64-character private key here..." style="margin-bottom: 0; flex: 1;">
                 <button class="btn-blue" onclick="pasteToInput('rec-priv', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
             </div>
             <button class="btn-purple" onclick="recoverWallet()" style="margin-top: 14px;">RESTORE & VALIDATE WALLET</button>
 
             <hr style="border-color: #30363d; margin: 20px 0;">
             
-            <h3>Bakiye Sorgulama</h3>
-            <label class="stat-label">Cüzdan Adresi:</label>
+            <h3>Query Ledger & Inventory</h3>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="chk-addr" placeholder="Cüzdan adresi girin..." style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="chk-addr" placeholder="Enter wallet address..." style="margin-bottom: 0; flex: 1;">
                 <button class="btn-blue" onclick="pasteToInput('chk-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
             </div>
-            <button class="btn-blue" onclick="checkBalance(true)" style="margin-top: 14px;">QUERY LEDGER</button>
-            <div id="balance-res" style="display: none; margin-top: 12px;">
+            <button class="btn-blue" onclick="checkBalance(true)" style="margin-top: 14px;">QUERY INVENTORY</button>
+
+            <!-- FULL INVENTORY ANALYTICS -->
+            <div id="balance-res" style="display: none; margin-top: 14px;">
                 <div class="stat-row"><span class="stat-label">MAIN COIN:</span><span id="bal-main" class="stat-val">0</span></div>
-                <div class="stat-row" style="margin-top: 8px;"><span class="stat-label">SHIELD COIN:</span><span id="bal-alt" class="stat-val" style="color: #a371f7 !important;">0</span></div>
+                <div class="stat-row" style="margin-top: 6px;"><span class="stat-label">TOTAL SHIELD COIN:</span><span id="bal-alt-count" class="stat-val" style="color: #a371f7 !important;">0 Units</span></div>
+                <div class="stat-row" style="margin-top: 6px;"><span class="stat-label">OVERALL AVERAGE POWER:</span><span id="bal-alt-avg" class="stat-val" style="color: #58a6ff !important;">0 / 99.0</span></div>
                 
-                <!-- 6 KADEMELİ DAĞILIM KARTLARI -->
-                <div class="tier-breakdown-box" id="tier-container">
-                    <div class="tier-card">
-                        <div class="tier-title">%99-70 (0-1K)</div>
-                        <div class="tier-count" id="tier-1-val">0</div>
+                <h4 style="margin: 16px 0 6px 0; font-size: 12px; color: #8b949e;">INVENTORY DISTRIBUTION BY POWER TIER:</h4>
+                <div class="tier-inventory-grid">
+                    <div class="tier-box t1">
+                        <div class="tier-box-title" style="color: #3fb950;">%99 - %70 POWER</div>
+                        <div class="tier-box-count" id="t1-count">0</div>
+                        <div class="tier-box-avg" id="t1-avg">Avg: 0.0</div>
                     </div>
-                    <div class="tier-card">
-                        <div class="tier-title">%70-50 (1K-10K)</div>
-                        <div class="tier-count" id="tier-2-val">0</div>
+                    <div class="tier-box t2">
+                        <div class="tier-box-title" style="color: #58a6ff;">%70 - %50 POWER</div>
+                        <div class="tier-box-count" id="t2-count">0</div>
+                        <div class="tier-box-avg" id="t2-avg">Avg: 0.0</div>
                     </div>
-                    <div class="tier-card">
-                        <div class="tier-title">%50-30 (10K-4M)</div>
-                        <div class="tier-count" id="tier-3-val">0</div>
+                    <div class="tier-box t3">
+                        <div class="tier-box-title" style="color: #d29922;">%50 - %30 POWER</div>
+                        <div class="tier-box-count" id="t3-count">0</div>
+                        <div class="tier-box-avg" id="t3-avg">Avg: 0.0</div>
                     </div>
-                    <div class="tier-card">
-                        <div class="tier-title">%30-10 (4M-8M)</div>
-                        <div class="tier-count" id="tier-4-val">0</div>
+                    <div class="tier-box t4">
+                        <div class="tier-box-title" style="color: #db6d28;">%30 - %10 POWER</div>
+                        <div class="tier-box-count" id="t4-count">0</div>
+                        <div class="tier-box-avg" id="t4-avg">Avg: 0.0</div>
                     </div>
-                    <div class="tier-card">
-                        <div class="tier-title">%10-1 (8M-16M)</div>
-                        <div class="tier-count" id="tier-5-val">0</div>
+                    <div class="tier-box t5">
+                        <div class="tier-box-title" style="color: #a371f7;">%10 - %1 POWER</div>
+                        <div class="tier-box-count" id="t5-count">0</div>
+                        <div class="tier-box-avg" id="t5-avg">Avg: 0.0</div>
                     </div>
-                    <div class="tier-card">
-                        <div class="tier-title">&lt;%1 (16M+)</div>
-                        <div class="tier-count" id="tier-6-val">0</div>
+                    <div class="tier-box t6">
+                        <div class="tier-box-title" style="color: #8b949e;">&lt;%1 FLOOR</div>
+                        <div class="tier-box-count" id="t6-count">0</div>
+                        <div class="tier-box-avg" id="t6-avg">Avg: 0.0</div>
                     </div>
+                </div>
+
+                <h4 style="margin: 16px 0 4px 0; font-size: 12px; color: #8b949e;">INDIVIDUAL TOKEN INCEPTION POWERS:</h4>
+                <div class="token-tags-container" id="token-tags-box">
+                    <span style="color: #6e7681; font-size: 11px;">No tokens found.</span>
                 </div>
             </div>
         </div>
 
         <div class="card">
             <h2>Mining Hub</h2>
-            <p style="color: #8b949e; font-size: 13px;">Sonsuz değişken matrisinde Proof-of-work kazımı.</p>
+            <p style="color: #8b949e; font-size: 13px;">Proof-of-work resolved across variable matrix. Each minted coin permanently seals its inception power.</p>
             
-            <label class="stat-label">Madenci Adresi:</label>
+            <label class="stat-label">Miner Address:</label>
             <div style="display: flex; gap: 8px; align-items: center;">
-                <input type="text" id="mine-addr" placeholder="Cüzdan adresi girin..." style="margin-bottom: 0; flex: 1;">
+                <input type="text" id="mine-addr" placeholder="Enter miner address..." style="margin-bottom: 0; flex: 1;">
                 <button class="btn-blue" onclick="pasteToInput('mine-addr', this)" style="width: auto; padding: 12px 14px; margin: 0;">PASTE</button>
             </div>
 
-            <label class="stat-label" style="margin-top: 14px; display: block;">Hedef Varlık:</label>
+            <label class="stat-label" style="margin-top: 14px; display: block;">Target Asset:</label>
             <select id="mine-type">
-                <option value="MAIN">MAIN COIN (Sabit 21M Taban Arz)</option>
-                <option value="ALT">SHIELD COIN (Sonsuz Matris Protokol Tokenı)</option>
+                <option value="ALT">SHIELD COIN (Power-Sealed Utility Token)</option>
+                <option value="MAIN">MAIN COIN (Fixed 21M Base Supply)</option>
             </select>
 
             <button id="btn-mine" class="btn-blue" onclick="startMining()">DISPATCH MINER</button>
@@ -432,8 +496,8 @@
             document.getElementById('stat-alt-height').innerText = data["1_GLOBAL_DATA"]?.["alt_chain_height"] || "1";
             document.getElementById('stat-main').innerText = data["1_GLOBAL_DATA"]?.["main_coin_supply"] || "-";
             document.getElementById('stat-alt').innerText = data["1_GLOBAL_DATA"]?.["shield_coin_circulating"] || "-";
-            document.getElementById('stat-impact').innerText = data["1_GLOBAL_DATA"]?.["impact_power"] || "99.0";
-        } catch (e) { console.error("API hatası:", e); }
+            document.getElementById('stat-impact').innerText = (data["1_GLOBAL_DATA"]?.["current_network_mint_power"] || "99.0") + " Power";
+        } catch (e) { console.error("Network communication error:", e); }
     }
 
     async function createWallet() {
@@ -446,7 +510,7 @@
 
     async function recoverWallet() {
         const privKey = document.getElementById('rec-priv').value.trim();
-        if (!privKey) return alert("Lütfen 64 karakterlik 256-bit Özel Anahtarınızı girin.");
+        if (!privKey) return alert("Please enter your 64-character 256-bit Private Key.");
 
         try {
             const res = await fetch(`${API}/wallet/recover`, {
@@ -459,39 +523,76 @@
                 document.getElementById('disp-pub').innerText = data.public_key;
                 document.getElementById('disp-priv-key').innerText = data.private_key;
                 document.getElementById('wallet-keys').style.display = 'block';
-                alert("Kriptografik doğrulama başarılı: Cüzdan yüklendi.");
+                alert("Cryptographic verification successful: Wallet restored.");
             } else {
-                alert(data.error || "Doğrulama başarısız: Geçersiz anahtar.");
+                alert(data.error || "Verification failed: Invalid key.");
             }
-        } catch (e) { alert("Sunucu ile iletişim hatası oluştu."); }
+        } catch (e) { alert("Network communication error."); }
     }
 
     async function checkBalance(isManual = false) {
         let addr = document.getElementById('chk-addr').value.trim();
         if (!addr) {
-            if (isManual) alert("Lütfen geçerli bir cüzdan adresi girin.");
+            if (isManual) alert("Please enter a valid wallet address.");
             document.getElementById('balance-res').style.display = 'none';
             return;
         }
 
         try {
             const data = await (await fetch(`${API}/chain?address=${addr}`)).json();
-            const userData = data["2_USER_DATA"] || {};
+            const u = data["2_USER_DATA"] || {};
             
-            document.getElementById('bal-main').innerText = userData["main_coin_balance"] || 0;
-            document.getElementById('bal-alt').innerText = userData["shield_compact_info"] || (userData["shield_coin_balance"] || 0);
+            document.getElementById('bal-main').innerText = (u["main_coin_balance"] || 0) + " Main Coin";
+            document.getElementById('bal-alt-count').innerText = (u["shield_coin_balance"] || 0) + " Units";
+            document.getElementById('bal-alt-avg').innerText = (u["shield_overall_average_power"] || 0) + " / 99.0";
             
-            const tiers = userData["shield_tier_breakdown"] || {};
-            document.getElementById('tier-1-val').innerText = (tiers["tier_99_70"] || 0).toLocaleString();
-            document.getElementById('tier-2-val').innerText = (tiers["tier_70_50"] || 0).toLocaleString();
-            document.getElementById('tier-3-val').innerText = (tiers["tier_50_30"] || 0).toLocaleString();
-            document.getElementById('tier-4-val').innerText = (tiers["tier_30_10"] || 0).toLocaleString();
-            document.getElementById('tier-5-val').innerText = (tiers["tier_10_1"] || 0).toLocaleString();
-            document.getElementById('tier-6-val').innerText = (tiers["tier_below_1"] || 0).toLocaleString();
+            const tiers = u["tiers"] || {};
+
+            const setTierUI = (id, key) => {
+                const item = tiers[key] || { count: 0, average_power: 0 };
+                document.getElementById(`${id}-count`).innerText = item.count + " Units";
+                document.getElementById(`${id}-avg`).innerText = "Avg: " + item.average_power;
+            };
+
+            setTierUI('t1', 'tier_99_70');
+            setTierUI('t2', 'tier_70_50');
+            setTierUI('t3', 'tier_50_30');
+            setTierUI('t4', 'tier_30_10');
+            setTierUI('t5', 'tier_10_1');
+            setTierUI('t6', 'tier_below_1');
+
+            const tierSelect = document.getElementById('cmd-tier');
+            tierSelect.options[0].text = `🟢 Tier 1 (%99 - %70 Power) (${tiers['tier_99_70']?.count || 0} Units)`;
+            tierSelect.options[1].text = `🔵 Tier 2 (%70 - %50 Power) (${tiers['tier_70_50']?.count || 0} Units)`;
+            tierSelect.options[2].text = `🟡 Tier 3 (%50 - %30 Power) (${tiers['tier_50_30']?.count || 0} Units)`;
+            tierSelect.options[3].text = `🟠 Tier 4 (%30 - %10 Power) (${tiers['tier_30_10']?.count || 0} Units)`;
+            tierSelect.options[4].text = `🟣 Tier 5 (%10 - %1 Power) (${tiers['tier_10_1']?.count || 0} Units)`;
+            tierSelect.options[5].text = `⚪ Tier 6 (<%1 Floor) (${tiers['tier_below_1']?.count || 0} Units)`;
+            tierSelect.options[6].text = `🌐 Any / Entire Portfolio (${u["shield_coin_balance"] || 0} Units)`;
+
+            const tagsBox = document.getElementById('token-tags-box');
+            tagsBox.innerHTML = '';
+            const allTokens = u["all_tokens_sorted"] || [];
+            if (allTokens.length === 0) {
+                tagsBox.innerHTML = '<span style="color: #6e7681; font-size: 11px;">No Shield tokens in wallet.</span>';
+            } else {
+                allTokens.forEach(p => {
+                    const tag = document.createElement('span');
+                    tag.className = 'token-tag';
+                    if (p >= 70.0) tag.style.borderColor = "#3fb950";
+                    else if (p >= 50.0) tag.style.borderColor = "#58a6ff";
+                    else if (p >= 30.0) tag.style.borderColor = "#d29922";
+                    else if (p >= 10.0) tag.style.borderColor = "#db6d28";
+                    else if (p >= 1.0) tag.style.borderColor = "#a371f7";
+                    else tag.style.borderColor = "#484f58";
+                    tag.innerText = p.toFixed(2) + " Power";
+                    tagsBox.appendChild(tag);
+                });
+            }
 
             document.getElementById('balance-res').style.display = 'block';
         } catch(e) {
-            if (isManual) alert("Bakiye sorgulanamadı.");
+            if (isManual) alert("Failed to query ledger balance.");
         }
     }
 
@@ -501,12 +602,12 @@
         const btn = document.getElementById('btn-mine');
         const log = document.getElementById('mine-log');
 
-        if (!addr) return alert("Lütfen geçerli bir madenci adresi girin.");
+        if (!addr) return alert("Please enter a valid miner address.");
 
         btn.disabled = true; 
-        btn.innerText = "KAZIM YAPILIYOR...";
+        btn.innerText = "MINING IN PROGRESS...";
         log.style.display = "block"; 
-        log.innerText = "Sonsuz değişken matrisinde aranıyor...";
+        log.innerText = "Searching infinite variable matrix space...";
 
         try {
             const data = await (await fetch(`${API}/mine?address=${addr}&coin=${coin}`)).json();
@@ -514,7 +615,7 @@
             refreshNetwork(); 
             checkBalance(false);
         } catch (e) { 
-            log.innerText = "Kazım döngüsünde hata oluştu."; 
+            log.innerText = "Mining cycle error occurred."; 
         } finally { 
             btn.disabled = false; 
             btn.innerText = "DISPATCH MINER"; 
@@ -524,98 +625,68 @@
     async function executeCommand() {
         const addr = document.getElementById('cmd-addr').value.trim();
         const privKey = document.getElementById('cmd-priv').value.trim();
+        const targetTier = document.getElementById('cmd-tier').value;
+        const burnCount = document.getElementById('cmd-burn-count').value.trim();
         const percentage = parseFloat(document.getElementById('cmd-percentage').value);
         const log = document.getElementById('cmd-log');
         const scope = document.getElementById('cmd-scope').value;
 
-        if (!addr || !privKey || !activeAction || isNaN(percentage)) {
-            return alert("Lütfen işlem türü seçin, geçerli anahtarlar ve yüzde girin.");
+        if (!addr || !privKey || !activeAction) {
+            return alert("Please select an action type and enter valid wallet keys.");
         }
 
         log.style.display = "block";
-        log.innerText = "Protokol mutasyonu ağa iletiliyor...";
+        log.innerText = `Extracting tokens from selected tier (${targetTier}) and broadcasting mutation...`;
+
+        const payload = {
+            address: addr,
+            private_key: privKey,
+            action: activeAction,
+            scope: scope,
+            target_tier: targetTier
+        };
+
+        if (burnCount !== "") {
+            payload.burn_count = parseInt(burnCount);
+        } else {
+            payload.alt_percentage = percentage;
+        }
 
         try {
             const res = await fetch(`${API}/protocol/act`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    address: addr, 
-                    private_key: privKey, 
-                    alt_percentage: percentage, 
-                    action: activeAction,
-                    scope: scope
-                })
+                body: JSON.stringify(payload)
             });
-            log.innerText = JSON.stringify(await res.json(), null, 2);
+            const resData = await res.json();
+            log.innerText = JSON.stringify(resData, null, 2);
             refreshNetwork(); 
             checkBalance(false);
-        } catch (e) { log.innerText = "İşlem başarısız oldu."; }
-    }
-
-    function copyToClipboard(text, btn) {
-        if (!text) return;
-
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => {
-                showSuccess(btn, "COPIED");
-            }).catch(() => {
-                fallbackCopy(text, btn);
-            });
-        } else {
-            fallbackCopy(text, btn);
-        }
-    }
-
-    function fallbackCopy(text, btn) {
-        const textArea = document.createElement("textarea");
-        textArea.value = text;
-        textArea.style.position = "fixed";
-        textArea.style.left = "-999999px";
-        textArea.style.top = "-999999px";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        try {
-            document.execCommand('copy');
-            showSuccess(btn, "COPIED");
-        } catch (err) {
-            console.error('Kopyalama hatası:', err);
-        }
-        document.body.removeChild(textArea);
-    }
-
-    function showSuccess(btn, message) {
-        if (btn) {
-            const old = btn.innerText;
-            btn.innerText = message;
-            setTimeout(() => { btn.innerText = old; }, 1200);
-        }
+        } catch (e) { log.innerText = "Execution failed."; }
     }
 
     function copyTextContent(elementId, btn) {
         const el = document.getElementById(elementId);
-        if (el) copyToClipboard(el.innerText, btn);
+        if (!el) return;
+        navigator.clipboard.writeText(el.innerText).then(() => {
+            const old = btn.innerText;
+            btn.innerText = "COPIED";
+            setTimeout(() => { btn.innerText = old; }, 1200);
+        });
     }
 
     async function pasteToInput(elementId, btn) {
         const input = document.getElementById(elementId);
         if (!input) return;
-
-        if (navigator.clipboard && navigator.clipboard.readText && window.isSecureContext) {
-            try {
-                const text = await navigator.clipboard.readText();
-                input.value = text.trim();
-                showSuccess(btn, "PASTED");
-                return;
-            } catch (err) {}
-        }
-
-        input.focus();
-        const manualText = prompt("Panodan yapıştırma kısıtlandı. Girişi buraya yapıştırın (Ctrl+V):");
-        if (manualText !== null && manualText.trim() !== "") {
-            input.value = manualText.trim();
-            showSuccess(btn, "PASTED");
+        try {
+            const text = await navigator.clipboard.readText();
+            input.value = text.trim();
+            const old = btn.innerText;
+            btn.innerText = "PASTED";
+            setTimeout(() => { btn.innerText = old; }, 1200);
+        } catch (e) {
+            const manual = prompt("Clipboard access restricted. Paste input here (Ctrl+V):");
+            if (manual) input.value = manual.trim();
         }
     }
 </script>
