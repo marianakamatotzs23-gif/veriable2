@@ -80,6 +80,26 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            background-color: #238636;
+            color: #ffffff !important;
+            padding: 8px 16px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 6px;
+            font-size: 13px;
+            display: inline-block;
+            text-transform: uppercase;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.2s ease-in-out;
+        }
+
+        .download-btn:hover {
+            background-color: #2ea043;
+            transform: translateY(-1px);
         }
 
         .card {
@@ -103,7 +123,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
             gap: 12px;
         }
 
@@ -274,6 +294,8 @@
             <p style="color: #8b949e; margin: 0; font-size: 13px;">Bitcoin-Grade 256-Bit Cryptographic Protocol Center</p>
         </div>
         <div class="header-controls">
+            <!-- P2P DESKTOP NODE DOWNLOAD BUTTON -->
+            <a href="/download" class="download-btn">⬇ DOWNLOAD NODE (.EXE)</a>
             <div id="google_translate_element"></div>
             <button class="btn-blue" onclick="refreshNetwork()" style="width: auto; padding: 8px 16px; margin: 0;">REFRESH</button>
         </div>
@@ -285,9 +307,9 @@
         <div class="stats-grid">
             <div class="stat-row"><span class="stat-label">Main Chain Height:</span><span id="stat-main-height" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Alt Chain Height:</span><span id="stat-alt-height" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Main Coin Total Supply:</span><span id="stat-main" class="stat-val">-</span></div>
+            <div class="stat-row"><span class="stat-label">Main Coin Supply:</span><span id="stat-main" class="stat-val">-</span></div>
             <div class="stat-row"><span class="stat-label">Shield Coin Circulating:</span><span id="stat-alt" class="stat-val">-</span></div>
-            <div class="stat-row"><span class="stat-label">Current Mint Inception Power:</span><span id="stat-impact" class="stat-val" style="color: #a371f7 !important;">-</span></div>
+            <div class="stat-row"><span class="stat-label">Current Mint Power:</span><span id="stat-impact" class="stat-val" style="color: #a371f7 !important;">-</span></div>
         </div>
     </div>
 
@@ -308,7 +330,7 @@
             <button class="btn-blue" onclick="pasteToInput('cmd-priv', this)" style="width: auto; padding: 12px 14px; margin: 0; background-color: #da3633;">PASTE</button>
         </div>
 
-        <!-- SELECTIVE POWER TIER SELECTION -->
+        <!-- TIER SELECTION -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-top: 14px;">
             <div>
                 <label class="stat-label" style="color: #58a6ff !important; font-weight: bold;">🎯 Target Power Tier to Burn:</label>
@@ -585,7 +607,7 @@
                     else if (p >= 10.0) tag.style.borderColor = "#db6d28";
                     else if (p >= 1.0) tag.style.borderColor = "#a371f7";
                     else tag.style.borderColor = "#484f58";
-                    tag.innerText = p.toFixed(2) + " Power";
+                    tag.innerText = p.toFixed(4) + " Power";
                     tagsBox.appendChild(tag);
                 });
             }
