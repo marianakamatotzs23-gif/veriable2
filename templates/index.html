@@ -283,6 +283,76 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #8b949e !important;
+            cursor: pointer;
+            width: auto;
+            padding: 0;
+        }
+
+        .modal-close:hover {
+            color: #ffffff !important;
+        }
+
+        .whitepaper-body {
+            line-height: 1.6;
+            font-size: 14px;
+            color: #c9d1d9;
+        }
+
+        .whitepaper-body h3 {
+            border-bottom: 1px solid #30363d;
+            padding-bottom: 8px;
+            margin-top: 25px;
+        }
+
+        .whitepaper-body ul {
+            padding-left: 20px;
+        }
+
+        .whitepaper-body li {
+            margin-bottom: 8px;
+        }
+
+        .whitepaper-body code {
+            background-color: #010409;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #30363d;
+            color: #58a6ff;
+        }
     </style>
 </head>
 <body>
@@ -294,6 +364,8 @@
             <p style="color: #8b949e; margin: 0; font-size: 13px;">Bitcoin-Grade 256-Bit Cryptographic Protocol Center</p>
         </div>
         <div class="header-controls">
+            <!-- WHITEPAPER MODAL BUTTON -->
+            <button class="btn-blue" onclick="openWhitepaperModal()" style="width: auto; padding: 8px 16px; margin: 0; background-color: #8957e5;">WHITEPAPER</button>
             <!-- P2P DESKTOP NODE DOWNLOAD BUTTON -->
             <a href="/download" class="download-btn">⬇ DOWNLOAD NODE (.EXE)</a>
             <div id="google_translate_element"></div>
@@ -487,6 +559,67 @@
     </div>
 </div>
 
+<!-- WHITEPAPER MODAL POPUP -->
+<div id="whitepaper-modal" class="modal-overlay" onclick="closeWhitepaperModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <button class="modal-close" onclick="closeWhitepaperModal()">&times;</button>
+        <h2 style="color: #58a6ff; margin-bottom: 5px;">Variable Coin Protocol (VCP)</h2>
+        <p style="color: #8b949e; font-size: 13px; margin-top: 0;">Technical Specification & Protocol Whitepaper</p>
+        
+        <div class="whitepaper-body">
+            <h3>1. Access Architecture: Web Showcase vs. Sovereign Desktop Node Option</h3>
+            <ul>
+                <li><strong>Web Showcase and Quick Access:</strong> The web interface (<code>veriable2.com</code>) serves as an accessible entry point to the ecosystem, an informational showcase, and a distribution hub for downloading the desktop application. Users can explore network metrics and general protocol status directly through standard web browsers.</li>
+                <li><strong>Local Installation Option (Desktop Sovereign Node - <code>veriable2.exe</code>):</strong> Alongside the web interface, users have the option to run the application directly on their local machines. The desktop client (<code>veriable2.exe</code>) connects straight to the serverless peer-to-peer (P2P) Distributed Hash Table (DHT) mesh without relying on intermediary web servers or third-party web runtimes.</li>
+                <li><strong>Independent Verification & State Enforcement:</strong> Operating a local desktop installation turns the client into an autonomous validation engine. Users independently verify block validity, engage directly in peer-to-peer block propagation, and enforce protocol invariant rules entirely on their own hardware.</li>
+            </ul>
+
+            <h3>2. Infinite Space Allocation & The Algorithmic 1% – 99% Variability Rule</h3>
+            <ul>
+                <li><strong>The Philosophy of Dynamic Variability:</strong> Unlike conventional blockchains where node influence is rigidly anchored to permanent hardware dominance, Variable Coin Protocol introduces an autonomous, rotating distribution architecture. Node responsibilities mutate across an infinite algorithmic space, dynamically balancing compute, bandwidth, and storage load across the network.</li>
+                <li><strong>Daily Epoch Rotation (24-Hour State Shift):</strong> Network responsibilities are never static. Every 24 hours, the protocol executes an automated epoch rotation. An operational tier is calculated algorithmically using the epoch seed and unique node identity: <code>(SHA256(Epoch_Seed || Node_ID) % 99) + 1</code>. A node allocated a 95% capacity quota today can rotate to a lightweight 5% role tomorrow, eliminating targeted denial-of-service (DoS) vectors.</li>
+                <li><strong>The Absolute 1% Floor (Anti-Freerider Guarantee):</strong> To eliminate parasitic participants that consume ledger state without contributing computational reciprocity, the system enforces a non-negotiable minimum capacity floor of <strong>1%</strong>. No connected peer can operate at 0%; even low-resource consumer hardware must contribute at least a 1% active validation and storage share.</li>
+                <li><strong>The Absolute 99% Ceiling (Anti-Monopoly Mathematical Limit):</strong> Network monopolization and single-entity cartels are mathematically precluded at the consensus layer. Any single space's capacity allocation is hard-capped at <strong>99%</strong> via <code>(hash % 99) + 1</code>. Residual fractional capacity is cryptographically routed across independent peers.</li>
+                <li><strong>Invisible Tier Execution Paradigm:</strong> Node tier percentages, epoch rotations, and mathematical allocations run strictly beneath the abstraction layer. Client dashboards omit internal tier rankings to prevent targeted exploitation.</li>
+                <li><strong>Functional PoW Transformation:</strong> Proof-of-Work serves as an active allocation and verification engine, anchoring newly minted blocks across dynamic spaces bounded strictly between 1% and 99%.</li>
+            </ul>
+
+            <h3>3. Deterministic Data Retention & Distribution Affinity (Data Affinity)</h3>
+            <ul>
+                <li><strong>Cryptographic Hash Pairing:</strong> Blocks are not redundantly duplicated across every participant's physical storage. Upon block generation, an Affinity Score is computed: <code>(SHA256(Block_Hash || Node_ID) % 99) + 1</code>.</li>
+                <li><strong>Storage Condition & Verification:</strong> A node permanently indexes and preserves a data block if and only if <code>Affinity Score &le; Capacity Tier</code>. Nodes rotated into higher tiers store larger subsets, whereas nodes in lower tiers maintain critical micro-shards.</li>
+                <li><strong>Zero-Loss Fault Tolerance:</strong> Ledger state is distributed probabilistically across infinite spaces, ensuring ledger integrity survives mass peer disconnects and local hardware failures.</li>
+                <li><strong>Hardware & Thermal Overflow Protection:</strong> Autonomous resource governors (<code>overflow_matrix.json</code>) protect hardware during high-tier assignments. If thermal thresholds or storage floor caps are approached, the node delegates excess storage load to neighboring DHT peers.</li>
+            </ul>
+
+            <h3>4. Helper Token (Shield Coin): Tiered Power & Decimal Damping Economics</h3>
+            <ul>
+                <li><strong>Dual Functional Division:</strong> Main Coin functions as a strictly capped store of value bounded by 21,000,000, while Shield Coin acts as an elastic, algorithmic shock absorber engineered to counteract market volatility.</li>
+                <li><strong>Tiered Power Milestones:</strong> Shield Coin impact power and mining difficulty begin at <strong>99.0</strong> and scale down through definitive cumulative supply milestones:
+                    <ul>
+                        <li><code>0 – 1,000 Coins:</code> 99.0 &rarr; 70.0 (Tier 1 Legendary Tokens)</li>
+                        <li><code>1,000 – 100,000 Coins:</code> 70.0 &rarr; 50.0 (Tier 2 High Tokens)</li>
+                        <li><code>100,000 – 4,000,000 Coins:</code> 50.0 &rarr; 30.0 (Tier 3 Medium Tokens)</li>
+                        <li><code>4,000,000 – 10,000,000 Coins:</code> 30.0 &rarr; 10.0 (Tier 4 Low Tokens)</li>
+                        <li><code>10,000,000 – 20,000,000 Coins:</code> 10.0 &rarr; 1.0 (Tier 5 Weak Tokens)</li>
+                        <li><code>20,000,000+ Coins (Infinite Space):</code> Decimal damping scales down every 10,000,000 coins (0.1, 0.01, 0.001...), exponentially narrowing the PoW target space.</li>
+                    </ul>
+                </li>
+                <li><strong>Asset Value Pegging (Peg Price):</strong> During market downturns, participants burn Shield Coins to anchor their effective holding price against a predetermined baseline.</li>
+                <li><strong>Asset Value Boosting (Boost Value):</strong> Users deploy Shield Coin impact power to scale effective asset value beyond prevailing spot prices.</li>
+                <li><strong>Permanent Burn & Supply Contraction:</strong> Triggering stabilization mechanisms permanently routes consumed Shield Coins directly to the unrecoverable dead address (<code>0x000000000000000000000000000000000000dEaD</code>).</li>
+            </ul>
+
+            <h3>5. Dual Mining Mathematics & Asymptotic Emission Curves</h3>
+            <ul>
+                <li><strong>Universal 99.0 Base Power:</strong> Every initialized node commences mining operations with an abstract base computational power of <strong>99.0</strong>.</li>
+                <li><strong>Main Coin Mining (10x Acceleration to 21M Cap):</strong> Main Coin difficulties scale 10 times faster than Shield Coin through comparable milestones (100, 10K, 400K, 1M, 2M coins) and linearize toward an absolute termination at 21,000,000 coins, where power locks at <strong>0.0</strong> permanently.</li>
+                <li><strong>Shield Coin Mining (99 &rarr; 0.000000001 Perpetual Asymptotic Floor):</strong> Shield Coin issuance is never terminated. Emission decelerates toward an asymptotic lower bound of <strong>0.000000001</strong>, never reaching absolute zero, guaranteeing perpetual network liquidity.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <script type="text/javascript">
     function googleTranslateElementInit() {
         new google.translate.TranslateElement({
@@ -502,6 +635,16 @@
     let activeAction = null;
 
     window.onload = refreshNetwork;
+
+    function openWhitepaperModal() {
+        document.getElementById('whitepaper-modal').style.display = 'block';
+    }
+
+    function closeWhitepaperModal(event) {
+        if (!event || event.target.id === 'whitepaper-modal' || event.target.className === 'modal-close') {
+            document.getElementById('whitepaper-modal').style.display = 'none';
+        }
+    }
 
     function selectAction(action, element) {
         activeAction = action;
