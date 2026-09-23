@@ -278,10 +278,12 @@
             border-radius: 6px;
             border: 1px solid #30363d;
             color: #f0f6fc !important;
-            max-height: 140px;
+            max-height: 160px;
             overflow-y: auto;
             white-space: pre-wrap;
-            word-break: break-all;
+            word-break: break-word;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
         }
 
         /* Modal Styles */
@@ -366,8 +368,8 @@
         <div class="header-controls">
             <!-- WHITEPAPER MODAL BUTTON -->
             <button class="btn-blue" onclick="openWhitepaperModal()" style="width: auto; padding: 8px 16px; margin: 0; background-color: #8957e5;">WHITEPAPER</button>
-            <!-- P2P DESKTOP NODE DOWNLOAD BUTTON -->
-            <a href="/download" class="download-btn">⬇ DOWNLOAD NODE (.EXE)</a>
+            <!-- P2P DESKTOP NODE DOWNLOAD BUTTON (ZIP / SAFE PACKAGE) -->
+            <a href="/download" class="download-btn">⬇ DOWNLOAD NODE (.ZIP)</a>
             <div id="google_translate_element"></div>
             <button class="btn-blue" onclick="refreshNetwork()" style="width: auto; padding: 8px 16px; margin: 0;">REFRESH</button>
         </div>
@@ -539,7 +541,7 @@
 
         <div class="card">
             <h2>Mining Hub</h2>
-            <p style="color: #8b949e; font-size: 13px;">Proof-of-work resolved across variable matrix. Each minted coin permanently seals its inception power.</p>
+            <p style="color: #8b949e; font-size: 13px;">Proof-of-work resolved across infinite variable matrix. Each minted coin permanently seals its inception power.</p>
             
             <label class="stat-label">Miner Address:</label>
             <div style="display: flex; gap: 8px; align-items: center;">
@@ -550,7 +552,7 @@
             <label class="stat-label" style="margin-top: 14px; display: block;">Target Asset:</label>
             <select id="mine-type">
                 <option value="ALT">SHIELD COIN (Power-Sealed Utility Token)</option>
-                <option value="MAIN">MAIN COIN (Fixed 21M Base Supply)</option>
+                <option value="MAIN">MAIN COIN (Fixed 50 Reward - 21M Cap)</option>
             </select>
 
             <button id="btn-mine" class="btn-blue" onclick="startMining()">DISPATCH MINER</button>
@@ -570,29 +572,19 @@
             <h3>1. Access Architecture: Web Showcase vs. Sovereign Desktop Node Option</h3>
             <ul>
                 <li><strong>Web Showcase and Quick Access:</strong> The web interface (<code>veriable2.com</code>) serves as an accessible entry point to the ecosystem, an informational showcase, and a distribution hub for downloading the desktop application. Users can explore network metrics and general protocol status directly through standard web browsers.</li>
-                <li><strong>Local Installation Option (Desktop Sovereign Node - <code>veriable2.exe</code>):</strong> Alongside the web interface, users have the option to run the application directly on their local machines. The desktop client (<code>veriable2.exe</code>) connects straight to the serverless peer-to-peer (P2P) Distributed Hash Table (DHT) mesh without relying on intermediary web servers or third-party web runtimes.</li>
+                <li><strong>Local Installation Option (Desktop Sovereign Node - <code>veriable2.exe</code>):</strong> Alongside the web interface, users have the option to run the application directly on their local machines. The desktop client connects straight to the serverless peer-to-peer (P2P) Distributed Hash Table (DHT) mesh without relying on intermediary web servers or third-party web runtimes.</li>
                 <li><strong>Independent Verification & State Enforcement:</strong> Operating a local desktop installation turns the client into an autonomous validation engine. Users independently verify block validity, engage directly in peer-to-peer block propagation, and enforce protocol invariant rules entirely on their own hardware.</li>
             </ul>
 
-            <h3>2. Infinite Space Allocation & The Algorithmic 1% – 99% Variability Rule</h3>
+            <h3>2. Infinite Multi-Space Matrix & The 1 - 99 Depth Rule</h3>
             <ul>
-                <li><strong>The Philosophy of Dynamic Variability:</strong> Unlike conventional blockchains where node influence is rigidly anchored to permanent hardware dominance, Variable Coin Protocol introduces an autonomous, rotating distribution architecture. Node responsibilities mutate across an infinite algorithmic space, dynamically balancing compute, bandwidth, and storage load across the network.</li>
-                <li><strong>Daily Epoch Rotation (24-Hour State Shift):</strong> Network responsibilities are never static. Every 24 hours, the protocol executes an automated epoch rotation. An operational tier is calculated algorithmically using the epoch seed and unique node identity: <code>(SHA256(Epoch_Seed || Node_ID) % 99) + 1</code>. A node allocated a 95% capacity quota today can rotate to a lightweight 5% role tomorrow, eliminating targeted denial-of-service (DoS) vectors.</li>
-                <li><strong>The Absolute 1% Floor (Anti-Freerider Guarantee):</strong> To eliminate parasitic participants that consume ledger state without contributing computational reciprocity, the system enforces a non-negotiable minimum capacity floor of <strong>1%</strong>. No connected peer can operate at 0%; even low-resource consumer hardware must contribute at least a 1% active validation and storage share.</li>
-                <li><strong>The Absolute 99% Ceiling (Anti-Monopoly Mathematical Limit):</strong> Network monopolization and single-entity cartels are mathematically precluded at the consensus layer. Any single space's capacity allocation is hard-capped at <strong>99%</strong> via <code>(hash % 99) + 1</code>. Residual fractional capacity is cryptographically routed across independent peers.</li>
-                <li><strong>Invisible Tier Execution Paradigm:</strong> Node tier percentages, epoch rotations, and mathematical allocations run strictly beneath the abstraction layer. Client dashboards omit internal tier rankings to prevent targeted exploitation.</li>
-                <li><strong>Functional PoW Transformation:</strong> Proof-of-Work serves as an active allocation and verification engine, anchoring newly minted blocks across dynamic spaces bounded strictly between 1% and 99%.</li>
+                <li><strong>Infinite Space Organization:</strong> Physical data blocks are never pooled into a monolithic file or folder. Ledger storage expands dynamically across infinite space partitions (<code>space_1</code>, <code>space_2</code> ... <code>space_N</code>).</li>
+                <li><strong>1 to 99 Depth Scale:</strong> Each individual space directory preserves a minimum of 1 and a maximum of 99 block states. Upon sealing the 99th index, the protocol automatically spawns the subsequent space partition, precluding local filesystem congestion.</li>
+                <li><strong>Asymmetric State Pruning & Base Anchors:</strong> During non-affinity epochs or storage pressure, historical transactions are physically purged from disk, anchoring the shard down to a lightweight <strong>1.0 base state</strong> (<code>BASE_LOCKED</code>). Over 90% of physical storage overhead is decoupled while safeguarding block cryptographic integrity.</li>
+                <li><strong>Cryptographic Snapshot Elevation:</strong> When a remote shard is synced, the payload is maintained under 1.0 quarantine until full SHA-256 snapshot confirmation elevates it back to the <strong>99.0 active state</strong>.</li>
             </ul>
 
-            <h3>3. Deterministic Data Retention & Distribution Affinity (Data Affinity)</h3>
-            <ul>
-                <li><strong>Cryptographic Hash Pairing:</strong> Blocks are not redundantly duplicated across every participant's physical storage. Upon block generation, an Affinity Score is computed: <code>(SHA256(Block_Hash || Node_ID) % 99) + 1</code>.</li>
-                <li><strong>Storage Condition & Verification:</strong> A node permanently indexes and preserves a data block if and only if <code>Affinity Score &le; Capacity Tier</code>. Nodes rotated into higher tiers store larger subsets, whereas nodes in lower tiers maintain critical micro-shards.</li>
-                <li><strong>Zero-Loss Fault Tolerance:</strong> Ledger state is distributed probabilistically across infinite spaces, ensuring ledger integrity survives mass peer disconnects and local hardware failures.</li>
-                <li><strong>Hardware & Thermal Overflow Protection:</strong> Autonomous resource governors (<code>overflow_matrix.json</code>) protect hardware during high-tier assignments. If thermal thresholds or storage floor caps are approached, the node delegates excess storage load to neighboring DHT peers.</li>
-            </ul>
-
-            <h3>4. Helper Token (Shield Coin): Tiered Power & Decimal Damping Economics</h3>
+            <h3>3. Helper Token (Shield Coin): Tiered Power & Decimal Damping Economics</h3>
             <ul>
                 <li><strong>Dual Functional Division:</strong> Main Coin functions as a strictly capped store of value bounded by 21,000,000, while Shield Coin acts as an elastic, algorithmic shock absorber engineered to counteract market volatility.</li>
                 <li><strong>Tiered Power Milestones:</strong> Shield Coin impact power and mining difficulty begin at <strong>99.0</strong> and scale down through definitive cumulative supply milestones:
@@ -610,10 +602,10 @@
                 <li><strong>Permanent Burn & Supply Contraction:</strong> Triggering stabilization mechanisms permanently routes consumed Shield Coins directly to the unrecoverable dead address (<code>0x000000000000000000000000000000000000dEaD</code>).</li>
             </ul>
 
-            <h3>5. Dual Mining Mathematics & Asymptotic Emission Curves</h3>
+            <h3>4. Dual Mining Mathematics & Asymptotic Emission Curves</h3>
             <ul>
                 <li><strong>Universal 99.0 Base Power:</strong> Every initialized node commences mining operations with an abstract base computational power of <strong>99.0</strong>.</li>
-                <li><strong>Main Coin Mining (10x Acceleration to 21M Cap):</strong> Main Coin difficulties scale 10 times faster than Shield Coin through comparable milestones (100, 10K, 400K, 1M, 2M coins) and linearize toward an absolute termination at 21,000,000 coins, where power locks at <strong>0.0</strong> permanently.</li>
+                <li><strong>Main Coin Mining:</strong> Provides an unvarying <strong>50 Main Coins per block</strong>. Difficulties scale smoothly across the 21,000,000 supply cap, permanently locking power at <strong>0.0</strong> once the ceiling is reached.</li>
                 <li><strong>Shield Coin Mining (99 &rarr; 0.000000001 Perpetual Asymptotic Floor):</strong> Shield Coin issuance is never terminated. Emission decelerates toward an asymptotic lower bound of <strong>0.000000001</strong>, never reaching absolute zero, guaranteeing perpetual network liquidity.</li>
             </ul>
         </div>
