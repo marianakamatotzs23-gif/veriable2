@@ -13,25 +13,26 @@ import socket
 import uuid
 import webbrowser
 
-# Native desktop GUI module
+# Masaüstü yerel pencere modülü (pywebview)
 try:
     import webview
 except ImportError:
     webview = None
 
-SHARDS_DIR = "chain_shards"
+# =====================================================================
+# GLOBAL PROTOKOL YAPILANDIRMASI VE SABİTLER
+# =====================================================================
+MATRIX_BASE_DIR = "variable_matrix"
 OVERFLOW_STORAGE_FILE = "overflow_matrix.json"
 BOOTSTRAP_PEERS = ["104.248.255.163:6000"]
+STORAGE_SAFETY_MARGIN_MB = 250   # Diskte 250 MB'dan az yer kalırsa otomatik taşma devreye girer
+THERMAL_TIME_THRESHOLD = 0.85     # İşlemci aşırı yük koruması eşik süresi
 
 # =====================================================================
-# CRYPTOGRAPHIC KEY ENGINE (BITCOIN-GRADE SECP256K1)
+# KRİPTOGRAFİK CÜZDAN MOTORU (BITCOIN SECP256K1)
 # =====================================================================
 def generate_master_wallet():
-    """
-    Generates Bitcoin-grade 256-bit cryptographic keys (SECP256k1).
-    Total key space: 2^256 combinations (~1.1579 x 10^77).
-    Mathematically impossible to brute-force or guess.
-    """
+    """Bitcoin standardında 256-bit SECP256k1 anahtar çifti üretir."""
     priv_bytes = secrets.token_bytes(32)
     sk = ecdsa.SigningKey.from_string(priv_bytes, curve=ecdsa.SECP256k1)
     vk = sk.verifying_key
@@ -41,28 +42,25 @@ def generate_master_wallet():
     }
 
 def wallet_from_private_key(private_key_hex):
-    """
-    Validates and restores a wallet from a 64-character 256-bit hex private key.
-    Strictly validates key length, scalar boundaries, and curve integrity.
-    """
+    """64 karakterlik özel anahtardan cüzdan adresini doğrular ve türetir."""
     clean_hex = str(private_key_hex).strip().lower()
     if len(clean_hex) != 64:
-        return None, None, f"Invalid key length ({len(clean_hex)} characters). Private key must be exactly 64 hexadecimal characters."
+        return None, None, f"Geçersiz anahtar uzunluğu ({len(clean_hex)}). 64 onaltılık karakter olmalıdır."
     try:
         key_int = int(clean_hex, 16)
         curve_order = ecdsa.SECP256k1.order
         if key_int <= 0 or key_int >= curve_order:
-            return None, None, "Invalid scalar: Value is outside SECP256k1 curve boundaries."
+            return None, None, "Değer SECP256k1 eliptik eğri sınırları dışında."
         sk = ecdsa.SigningKey.from_string(bytes.fromhex(clean_hex), curve=ecdsa.SECP256k1)
         vk = sk.verifying_key
         return sk.to_string().hex(), vk.to_string().hex(), None
     except ValueError:
-        return None, None, "Format error: Private key must contain valid hexadecimal characters (0-9, a-f)."
+        return None, None, "Biçim hatası: Özel anahtar sadece onaltılık karakter içerebilir."
     except Exception as e:
-        return None, None, f"Cryptographic verification error: {str(e)}"
+        return None, None, f"Kriptografik doğrulama hatası: {str(e)}"
 
 def verify_key_match(private_key_hex, public_key_hex):
-    """Cryptographically verifies if the given private key matches the target public key."""
+    """Özel anahtarın hedef cüzdan adresi ile uyuştuğunu kriptografik olarak denetler."""
     if not private_key_hex or not public_key_hex:
         return False
     try:
@@ -75,7 +73,7 @@ def verify_key_match(private_key_hex, public_key_hex):
         return False
 
 def get_tier_for_power(power):
-    """Maps an individual token's raw power to its respective tier."""
+    """Token gücünü protokol seviye kategorisine eşler."""
     p = float(power)
     if p >= 70.0:
         return 'tier_99_70'
@@ -91,15 +89,11 @@ def get_tier_for_power(power):
         return 'tier_below_1'
 
 # =====================================================================
-# HARDWARE, THERMAL & INFINITE VARIABLE SEARCH ENGINE
+# DONANIMDAN BAĞIMSIZ RASTGELE KOTA VE DEPOLAMA DENETÇİSİ
 # =====================================================================
-class ThermalAndStorageGovernor:
-    """
-    Monitors device storage and processing duration to prevent overheating
-    and storage exhaustion, especially on mobile or lightweight nodes.
-    """
+class StorageGovernor:
     @staticmethod
-    def get_available_storage_mb():
+    def get_free_disk_mb():
         try:
             total, used, free = shutil.disk_usage(".")
             return free // (1024 * 1024)
@@ -107,61 +101,105 @@ class ThermalAndStorageGovernor:
             return 1000
 
     @staticmethod
-    def check_thermal_pressure(processing_duration, threshold_seconds=0.75):
-        return processing_duration > threshold_seconds
+    def check_thermal_pressure(processing_duration):
+        return processing_duration > THERMAL_TIME_THRESHOLD
+
+    @staticmethod
+    def assign_pure_random_tier(node_id, epoch):
+        """
+        Cihaz donanımına (CPU, RAM, Disk) KESİNLİKLE BAKMAZ.
+        Her 24 saatte bir (epoch) tamamen bağımsız ve rastgele 1 ile 99 arasında bir kota belirler.
+        En az %1 (katılım tabanı), en çok %99 (tekel engeli).
+        """
+        seed = f"VERIABLE_PURE_RANDOM_TIER_{node_id}_{epoch}"
+        raw_hash = int(hashlib.sha256(seed.encode()).hexdigest(), 16)
+        pure_tier = (raw_hash % 99) + 1  # 1 ile 99 arası
+        return pure_tier
 
 class InfiniteVariableSearchEngine:
     @staticmethod
     def search_infinite_variables(seed_identifier, mining_difficulty, coin_type="MAIN"):
         attempts = 0
         max_attempts = 350000 if coin_type == "MAIN" else 500000
-        
         while attempts < max_attempts:
             attempts += 1
             var_seed = f"{seed_identifier}_{attempts}"
             var_hash = hashlib.sha256(var_seed.encode('utf-8')).hexdigest()
             val = int(hashlib.md5(var_hash.encode('utf-8')).hexdigest(), 16)
             scale_val = (val % 99000000) / 1000000.0
-            
             if scale_val <= mining_difficulty or attempts >= max_attempts:
                 return var_hash, attempts, scale_val
-                
         return "0x0", attempts, mining_difficulty
 
 # =====================================================================
-# DISTRIBUTED 1-99 SHARD STORAGE & QUARANTINE ENGINE
+# SONSUZ UZAY MATRİKS DEPOLAMA MOTORU (SPACE_1 ... SPACE_N)
 # =====================================================================
 class ShardedResilientVariableStorageEngine:
     """
-    1-99 State Storage Engine (Fully Sharded - No Single Storage File):
-    - Each block is stored in its own shard file under 'chain_shards/'.
-    - Pruned data drops to a 1.0 base anchor (BASE_LOCKED).
-    - Upon restoration, data remains in 1.0 quarantine until SHA-256 validation elevates it back to 99.0.
+    Sonsuz Uzay Depolama Motoru:
+    - Veriler asla tek klasörde toplanmaz; space_1, space_2 ... space_N şeklinde sonsuza uzanır.
+    - Her klasör 1 ile 99 seviye (en az 1, en çok 99 blok) derinliğinde veri saklar.
+    - 99 blok dolduğunda otomatik olarak bir sonraki uzay klasörü açılır.
+    - Disk alanı yetersiz olduğunda (<250 MB) veriler taşma havuzuna aktarılır (offload).
+    - Blok tapusu ve kullanıcının fon hakkı 1.0 tabanında (BASE_LOCKED_OFFLOADED) eksiksiz korunur.
+    - Budanan blokların işlem yükü %99 oranında silinir.
+    - Geri yüklenen bloklar karantinada bekletilip SHA-256 ile doğrulanarak 99.0 güce yükseltilir.
     """
-    def __init__(self, shards_dir=SHARDS_DIR):
-        self.shards_dir = shards_dir
-        os.makedirs(self.shards_dir, exist_ok=True)
+    def __init__(self, base_dir=MATRIX_BASE_DIR):
+        self.base_dir = base_dir
+        os.makedirs(self.base_dir, exist_ok=True)
         self.index_headers = {}
 
-    def _block_path(self, coin_type, index):
-        return os.path.join(self.shards_dir, f"{coin_type}_{index}.json")
+    def _get_infinite_space_id(self, index):
+        """Her 99 veride bir sonraki sonsuz uzay klasörünün numarasını verir."""
+        idx = int(index)
+        return ((idx - 1) // 99) + 1
 
-    def allocate_block(self, block, is_full=True):
+    def _get_level_in_space(self, index):
+        """Bloğun bulunduğu uzay klasörü içerisindeki 1-99 seviye derinliğini belirler."""
+        idx = int(index)
+        return ((idx - 1) % 99) + 1
+
+    def _block_path(self, coin_type, index):
+        space_id = self._get_infinite_space_id(index)
+        space_folder = os.path.join(self.base_dir, f"space_{space_id}")
+        os.makedirs(space_folder, exist_ok=True)
+        return os.path.join(space_folder, f"{coin_type}_{index}.json")
+
+    def allocate_block(self, block, user_random_tier=99):
         coin_type = block.get('coin_type', 'MAIN')
         idx = int(block['index'])
+        space_id = self._get_infinite_space_id(idx)
+        level_in_space = self._get_level_in_space(idx)
         
-        if is_full:
-            block['power_scale'] = 99.0
-            block['status'] = "ACTIVE"
-        else:
+        block['space_id'] = space_id
+        block['space_level'] = level_in_space
+
+        block_tier_hash = int(hashlib.sha256(f"{coin_type}_{idx}".encode()).hexdigest(), 16)
+        block_tier = (block_tier_hash % 99) + 1
+
+        free_disk_mb = StorageGovernor.get_free_disk_mb()
+
+        # DİSK DOLUYSA VEYA KULLANICININ GÜNLÜK RASTGELE PAYINDAN YÜKSEKSE:
+        # Fiziksel işlemler offload edilir, ancak fon tapusu ve blok 1.0 tabanında KORUNUR.
+        if free_disk_mb < STORAGE_SAFETY_MARGIN_MB:
+            block['power_scale'] = 1.0
+            block['status'] = "BASE_LOCKED_OFFLOADED"
+            self._save_to_overflow_storage(block)
+            block['archived_payload'] = block.get('transactions', [])
+            block['transactions'] = []
+        elif block_tier > user_random_tier:
             block['power_scale'] = 1.0
             block['status'] = "BASE_LOCKED"
             block['archived_payload'] = block.get('transactions', [])
             block['transactions'] = []
-            
-        tx_serialized = json.dumps(block.get('transactions', []) or block.get('archived_payload', []), sort_keys=True)
-        block['data_snapshot_hash'] = hashlib.sha256(tx_serialized.encode()).hexdigest()
-        
+        else:
+            block['power_scale'] = 99.0
+            block['status'] = "ACTIVE"
+
+        tx_payload = block.get('transactions', []) or block.get('archived_payload', [])
+        block['data_snapshot_hash'] = hashlib.sha256(json.dumps(tx_payload, sort_keys=True).encode()).hexdigest()
+
         path = self._block_path(coin_type, idx)
         try:
             with open(path, 'w', encoding='utf-8') as f:
@@ -171,12 +209,31 @@ class ShardedResilientVariableStorageEngine:
 
         self.index_headers[(coin_type, idx)] = block
 
+    def _save_to_overflow_storage(self, block):
+        """Yerel disk yetmediğinde fiziksel veriyi harici taşma dizinine yazar."""
+        try:
+            records = []
+            if os.path.exists(OVERFLOW_STORAGE_FILE):
+                with open(OVERFLOW_STORAGE_FILE, 'r', encoding='utf-8') as f:
+                    records = json.load(f)
+            records.append({
+                "coin_type": block.get('coin_type'),
+                "index": block.get('index'),
+                "hash": block.get('hash'),
+                "transactions": block.get('transactions', []),
+                "offloaded_at": int(time())
+            })
+            with open(OVERFLOW_STORAGE_FILE, 'w', encoding='utf-8') as f:
+                json.dump(records[-300:], f, indent=2)
+        except Exception:
+            pass
+
     def soft_prune_shard(self, coin_type, index):
-        """Locks a shard at 1.0 base anchor and removes transactions from physical disk."""
+        """Eski bloğun %99 işlem yükünü siler, tapuyu 1.0 tabanına kilitler."""
         idx = int(index)
         block = self.get_block(coin_type, idx)
         if not block:
-            return False, "Block not found."
+            return False, "Blok bulunamadı."
 
         block['archived_payload'] = block.get('transactions', [])
         block['transactions'] = []
@@ -191,14 +248,14 @@ class ShardedResilientVariableStorageEngine:
             pass
             
         self.index_headers[(coin_type, idx)] = block
-        return True, f"Block {coin_type}_{idx} locked at base scale (1.0)."
+        return True, f"Blok {coin_type}_{idx} space_{block.get('space_id')} içinde 1.0 tabanına kilitlendi."
 
     def request_restore_shard(self, coin_type, index, remote_transactions):
-        """Places restored data into 1.0 quarantine awaiting cryptographic confirmation."""
+        """Dışarıdan gelen veriyi doğrudan zincire almaz, 1.0 karantinasına sokar."""
         idx = int(index)
         block = self.get_block(coin_type, idx)
         if not block:
-            return False, "Block not found."
+            return False, "Blok bulunamadı."
 
         block['transactions'] = remote_transactions
         block['status'] = "RESTORE_PENDING"
@@ -212,17 +269,14 @@ class ShardedResilientVariableStorageEngine:
             pass
             
         self.index_headers[(coin_type, idx)] = block
-        return True, f"Block {coin_type}_{idx} placed in quarantine (1.0). Awaiting snapshot validation."
+        return True, "Blok karantina modunda kabul edildi (1.0)."
 
     def system_validate_and_elevate(self, coin_type, index):
-        """Validates quarantine snapshot hash and elevates verified block back to 99.0 scale."""
+        """Karantinadaki veriyi SHA-256 snapshot ile doğrular, tutarsa 99.0 aktif yapar."""
         idx = int(index)
         block = self.get_block(coin_type, idx)
-        if not block:
-            return False, "Block not found."
-
-        if block.get('status') != "RESTORE_PENDING":
-            return False, "Block is not pending validation."
+        if not block or block.get('status') != "RESTORE_PENDING":
+            return False, "Doğrulama reddedildi: Karantina durumu yok."
 
         current_tx_serialized = json.dumps(block.get('transactions', []), sort_keys=True)
         current_hash = hashlib.sha256(current_tx_serialized.encode()).hexdigest()
@@ -237,7 +291,7 @@ class ShardedResilientVariableStorageEngine:
             except Exception:
                 pass
             self.index_headers[(coin_type, idx)] = block
-            return True, f"Validation successful. Block {coin_type}_{idx} elevated to 99.0 scale."
+            return True, "Doğrulama başarılı: Blok 99.0 aktif gücüne yükseltildi."
         else:
             block['power_scale'] = 1.0
             block['status'] = "BASE_LOCKED"
@@ -248,7 +302,7 @@ class ShardedResilientVariableStorageEngine:
             except Exception:
                 pass
             self.index_headers[(coin_type, idx)] = block
-            return False, "Hash mismatch. Block remains locked at 1.0 base scale."
+            return False, "Kriptografik uyuşmazlık: Blok 1.0 tabanında tutuldu."
 
     def get_block(self, coin_type, index):
         idx = int(index)
@@ -262,22 +316,27 @@ class ShardedResilientVariableStorageEngine:
         return self.index_headers.get((coin_type, idx))
 
     def load_all_shards(self):
+        """Sonsuz sayıda oluşabilecek tüm space_X klasörlerini dinamik tarar."""
         self.index_headers.clear()
-        if not os.path.exists(self.shards_dir):
+        if not os.path.exists(self.base_dir):
             return
-        for fname in os.listdir(self.shards_dir):
-            if fname.endswith(".json"):
-                parts = fname[:-5].rsplit('_', 1)
-                if len(parts) == 2:
-                    coin_type, idx_str = parts
-                    try:
-                        idx = int(idx_str)
-                        path = os.path.join(self.shards_dir, fname)
-                        with open(path, 'r', encoding='utf-8') as f:
-                            b = json.load(f)
-                            self.index_headers[(coin_type, idx)] = b
-                    except Exception:
-                        pass
+            
+        for space_name in os.listdir(self.base_dir):
+            space_path = os.path.join(self.base_dir, space_name)
+            if os.path.isdir(space_path) and space_name.startswith("space_"):
+                for fname in os.listdir(space_path):
+                    if fname.endswith(".json"):
+                        parts = fname[:-5].rsplit('_', 1)
+                        if len(parts) == 2:
+                            coin_type, idx_str = parts
+                            try:
+                                idx = int(idx_str)
+                                fpath = os.path.join(space_path, fname)
+                                with open(fpath, 'r', encoding='utf-8') as f:
+                                    b = json.load(f)
+                                    self.index_headers[(coin_type, idx)] = b
+                            except Exception:
+                                pass
 
     def get_chain_length(self, coin_type):
         indices = [k[1] for k in self.index_headers.keys() if k[0] == coin_type]
@@ -291,7 +350,7 @@ class ShardedResilientVariableStorageEngine:
         return result
 
 # =====================================================================
-# BLOCKCHAIN CORE ENGINE
+# BLOKZİNCİR PROTOKOL ÇEKİRDEĞİ
 # =====================================================================
 class Blockchain(object):
     def __init__(self):
@@ -304,7 +363,7 @@ class Blockchain(object):
         self.storage.load_all_shards()
         
         self.BASE_MAX_MAIN = 21000000
-        self.BASE_MAIN_REWARD = 50  # Her blok tam ve kesin 50 Main Coin
+        self.BASE_MAIN_REWARD = 50  # Her blok tam 50 Main Coin
         self.dynamic_supply_offset = 0
         self.supply_variance_limit = 5000000
         self.burned_main_coins = 0
@@ -312,9 +371,8 @@ class Blockchain(object):
         self.sub_coin_name = "SHIELD_COIN"
         self.market_boost_bonus = 0.0
         self.market_peg_active = False
-        self.user_stats = {}  
+        self.user_stats = {}
 
-        # İlk Başlangıç: Shard yoksa Genesis Shard'larını oluştur
         if self.storage.get_chain_length("MAIN") == 0:
             self.mint_block(proof=100, coin_type="MAIN", previous_hash='1')
             
@@ -330,7 +388,7 @@ class Blockchain(object):
             return None
         return self.storage.get_block(coin_type, length)
 
-    def mint_block(self, proof, coin_type="MAIN", previous_hash=None):
+    def mint_block(self, proof, coin_type="MAIN", previous_hash=None, user_tier=99):
         with self.lock:
             last = self.get_last_block(coin_type)
             prev_hash = previous_hash or (self.hash(last) if last else '1')
@@ -352,21 +410,21 @@ class Blockchain(object):
             else:
                 self.current_alt_transactions = []
             
-        self.storage.allocate_block(block, is_full=True)
+        self.storage.allocate_block(block, user_random_tier=user_tier)
         return block
 
     def new_transaction(self, sender, recipient, amount, coin_type="MAIN", powers=None):
         try:
             amount = int(float(amount))
         except Exception:
-            return False, "Invalid amount parameter."
+            return False, "Geçersiz miktar parametresi."
             
         if amount <= 0:
-            return False, "Amount must be greater than zero."
+            return False, "Miktar sıfırdan büyük olmalıdır."
             
         with self.lock:
             if sender != "0" and self.get_balance(sender, coin_type, True) < amount:
-                return False, "Insufficient balance."
+                return False, "Yetersiz bakiye."
             
             tx_data = {
                 'sender': sender,
@@ -383,7 +441,7 @@ class Blockchain(object):
 
     @staticmethod
     def hash(block):
-        block_copy = {k: v for k, v in block.items() if k not in ('hash', 'status', 'power_scale', 'archived_payload', 'data_snapshot_hash')}
+        block_copy = {k: v for k, v in block.items() if k not in ('hash', 'status', 'power_scale', 'archived_payload', 'data_snapshot_hash', 'space_id', 'space_level')}
         return hashlib.sha256(json.dumps(block_copy, sort_keys=True).encode()).hexdigest()
 
     def get_user_stats(self, address):
@@ -476,15 +534,7 @@ class Blockchain(object):
         return int(total)
 
     def get_shield_impact_power(self):
-        """
-        YARDIMCI COIN (SHIELD COIN) - DAHA HIZLI ZORLAŞAN TARAF (UÇURUMSUZ):
-        - 0 - 1.000 coin: 99.0 -> 70.0 (Her blokta ~0.029 puan tatlı tatlı düşer)
-        - 1.000 - 100.000 coin: 70.0 -> 50.0
-        - 100.000 - 4.000.000 coin: 50.0 -> 30.0
-        - 4.000.000 - 10.000.000 coin: 30.0 -> 10.0
-        - 10.000.000 - 20.000.000 coin: 10.0 -> 1.0
-        - 20.000.000+ coin (Sonsuz Alan): Her 10 milyonda bir basamak sıfır (0.1 -> 0.01 -> 0.001...)
-        """
+        """Shield Coin: Kademeli azalan ve 20M sonrasında basamak basamak sönümlenen eğri."""
         alt_mined = self.get_total_mined(self.sub_coin_name)
         if alt_mined <= 0:
             return 99.0
@@ -522,34 +572,20 @@ class Blockchain(object):
         return self.get_shield_impact_power()
 
     def get_mining_power_main(self, address=None):
-        """
-        ANA COIN (MAIN COIN) - RAHAT KAZILAN VE YAVAŞ ZORLAŞAN TARAF:
-        - 99.0'dan başlar, son derece rahat kazılır.
-        - 21 milyona doğru pürüzsüzce 1.0'a iner.
-        - Tam 21.000.000 coine ulaştığında 0.0'a kilitlenir.
-        """
+        """Main Coin: 21 milyona doğru pürüzsüz iner, tavanda 0.0'a kilitlenir."""
         total_mined = self.get_total_mined("MAIN")
         max_limit = self.get_effective_max_supply(address)
         if total_mined >= max_limit:
             return 0.0
 
-        # 21 milyonluk devasa arza yayılmış pürüzsüz doğrusal zorlaşma
         progress = total_mined / float(max_limit)
         power = 99.0 * (1.0 - progress)
         return max(0.0001, round(power, 4))
 
 # =====================================================================
-# SERVERLESS 1-99 DHT P2P MESH & THERMAL OVERFLOW MANAGER
+# 24 SAATTE BİR ROTASYON YAPAN P2P DHT AĞ VE TERMAL YÖNETİCİ
 # =====================================================================
 class P2PNetworkManager:
-    """
-    Serverless P2P Network Manager:
-    - Pure 1-99 variable rule for both blocks and IP distribution (No peers.txt).
-    - Hardware-agnostic random sharding (Fair allocation).
-    - Thermal & storage pressure protection (Overflow matrix buffers).
-    - Daily dynamic epoch rotation (Tiers shift every 24h).
-    - WAN Bootstrap synchronization with remote seed node.
-    """
     def __init__(self, blockchain, tcp_port=6000, udp_port=6001):
         self.blockchain = blockchain
         self.tcp_port = tcp_port
@@ -557,11 +593,11 @@ class P2PNetworkManager:
         self.peers = set()
         
         self.node_id = hex(uuid.getnode())
-        self.current_epoch = self._get_current_epoch()
-        self.my_tier = self._calculate_daily_tier()
+        self.current_epoch = int(time() // 86400)
+        # Donanıma bakılmaksızın 1 ile 99 arasında saf rastgele pay
+        self.my_tier = StorageGovernor.assign_pure_random_tier(self.node_id, self.current_epoch)
         self.is_overheating = False
         
-        # 1. TCP Dinleyici (Blok İletişimi ve Dağıtık Senkronizasyon)
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         try:
@@ -571,43 +607,28 @@ class P2PNetworkManager:
         except Exception:
             pass
 
-        # 2. İnternet Üzerinden Bootstrap Seed Bağlantısı (104.248.255.163:6000)
         threading.Thread(target=self._bootstrap_discovery_loop, daemon=True).start()
-        
-        # 3. Yerel Ağ (LAN) Keşif Beacon'ları
         threading.Thread(target=self._broadcast_beacon, daemon=True).start()
         threading.Thread(target=self._listen_beacon, daemon=True).start()
-        
-        # 4. 24 Saatlik Epoch Rotasyonu
         threading.Thread(target=self._daily_rotation_loop, daemon=True).start()
 
-    def _get_current_epoch(self):
-        return int(time() // 86400)
-
-    def _calculate_daily_tier(self):
-        """Determines daily 1-99 tier completely independent of hardware speed."""
-        seed = f"{self.node_id}_{self.current_epoch}"
-        raw_hash = int(hashlib.sha256(seed.encode()).hexdigest(), 16)
-        daily_tier = (raw_hash % 99) + 1
-        
-        free_mb = ThermalAndStorageGovernor.get_available_storage_mb()
-        if free_mb < 500:
-            daily_tier = min(daily_tier, 5)
-        return daily_tier
-
     def _daily_rotation_loop(self):
+        """Her 24 saatte bir tüm sonsuz uzay klasörlerindeki kotaları yeniden dağıtır."""
         while True:
-            sleep(3600)
-            new_epoch = self._get_current_epoch()
+            sleep(3600)  # Her saat başı döngüyü kontrol eder
+            new_epoch = int(time() // 86400)
             if new_epoch != self.current_epoch:
                 self.current_epoch = new_epoch
                 old_tier = self.my_tier
-                self.my_tier = self._calculate_daily_tier()
+                # 24 saat doldu: Yeni saf rastgele oran atanır (Donanıma bakılmaz)
+                self.my_tier = StorageGovernor.assign_pure_random_tier(self.node_id, self.current_epoch)
+                
+                # Eğer oran düştüyse tüm sonsuz uzay klasörlerindeki fazla blokları 1.0 tabanına budar
                 if self.my_tier < old_tier:
                     self._prune_excess_blocks()
 
     def _prune_excess_blocks(self):
-        """1-99 Kuralı: Yeni kademeden yüksek kalan blokların gövdesini fiziksel olarak budar."""
+        """Sonsuz uzay klasörlerinin tamamında yeni kotanın üstünde kalan blokları hafifletir."""
         for coin_type in ("MAIN", self.blockchain.sub_coin_name):
             all_b = self.blockchain.storage.get_all_blocks(coin_type)
             for idx in list(all_b.keys()):
@@ -617,7 +638,6 @@ class P2PNetworkManager:
                     self.blockchain.storage.soft_prune_shard(coin_type, idx)
 
     def register_peer(self, peer_address):
-        """Registers peer IP address under the 1-99 variable rule."""
         try:
             ip = peer_address.split(':')[0]
             ip_hash = int(hashlib.sha256(ip.encode()).hexdigest(), 16)
@@ -628,7 +648,6 @@ class P2PNetworkManager:
             pass
 
     def _bootstrap_discovery_loop(self):
-        """İnternet üzerindeki tohum sunucuya bağlanıp güncel aktif düğüm listesi alır."""
         while True:
             for seed in BOOTSTRAP_PEERS:
                 try:
@@ -671,46 +690,18 @@ class P2PNetworkManager:
         except Exception:
             pass
 
-    def route_to_overflow_storage(self, block):
-        try:
-            overflow_data = []
-            if os.path.exists(OVERFLOW_STORAGE_FILE):
-                with open(OVERFLOW_STORAGE_FILE, "r", encoding="utf-8") as f:
-                    overflow_data = json.load(f)
-            
-            light_block = {
-                "coin_type": block.get("coin_type", "MAIN"),
-                "index": block.get("index"),
-                "hash": block.get("hash"),
-                "timestamp": block.get("timestamp"),
-                "status": "OFFLOADED_DUE_TO_HEAT"
-            }
-            overflow_data.append(light_block)
-            
-            with open(OVERFLOW_STORAGE_FILE, "w", encoding="utf-8") as f:
-                json.dump(overflow_data[-100:], f, indent=2)
-        except Exception:
-            pass
-
     def _cool_down_node(self):
         self.is_overheating = False
 
     def handle_incoming_block(self, block):
         start_time = time()
-        coin_type = block.get('coin_type', 'MAIN')
-        slot_id = int(block['index'])
-        slot_hash = int(hashlib.sha256(f"{coin_type}_{slot_id}".encode()).hexdigest(), 16)
-        block_tier = (slot_hash % 99) + 1
-
         if self.is_overheating:
-            self.route_to_overflow_storage(block)
+            self.blockchain.storage._save_to_overflow_storage(block)
             return
 
-        is_full_allocation = (block_tier <= self.my_tier)
-        self.blockchain.storage.allocate_block(block, is_full=is_full_allocation)
-
+        self.blockchain.storage.allocate_block(block, user_random_tier=self.my_tier)
         duration = time() - start_time
-        if ThermalAndStorageGovernor.check_thermal_pressure(duration):
+        if StorageGovernor.check_thermal_pressure(duration):
             self.is_overheating = True
             threading.Timer(15.0, self._cool_down_node).start()
 
@@ -761,9 +752,14 @@ class P2PNetworkManager:
                 self.peers.discard(peer)
 
 # =====================================================================
-# FLASK WEB & API SERVICES
+# FLASK WEB & API SERVİSİ (PYINSTALLER İLE GÖMÜLÜ ŞABLONLAR)
 # =====================================================================
-app = Flask(__name__)
+if getattr(sys, 'frozen', False):
+    template_folder = os.path.join(sys._MEIPASS, 'templates')
+    app = Flask(__name__, template_folder=template_folder)
+else:
+    app = Flask(__name__)
+
 app.json.ensure_ascii = False
 blockchain = Blockchain()
 p2p_network = P2PNetworkManager(blockchain, tcp_port=6000, udp_port=6001)
@@ -774,12 +770,10 @@ def home():
 
 @app.route('/download', methods=['GET'])
 def download_app():
-    exe_path = os.path.join("dist", "veriable2.exe")
-    if not os.path.exists(exe_path):
-        exe_path = "veriable2.exe"
-    if os.path.exists(exe_path):
-        return send_file(exe_path, as_attachment=True)
-    return jsonify({"error": "Desktop node binary not found on local disk."}), 404
+    for f in ["veriable2-node.zip", os.path.join("dist", "veriable2-node.zip"), "veriable2.exe", os.path.join("dist", "veriable2.exe")]:
+        if os.path.exists(f):
+            return send_file(f, as_attachment=True)
+    return jsonify({"error": "Kurulum paketi disk üzerinde bulunamadı."}), 404
 
 @app.route('/wallet/new', methods=['GET'])
 def new_wallet():
@@ -798,7 +792,7 @@ def mine():
     miner_address = request.args.get('address')
     selected_coin = request.args.get('coin', default='MAIN').upper()
     if not miner_address or len(miner_address) < 20:
-        return jsonify({'error': 'Invalid miner address.'}), 400
+        return jsonify({'error': 'Geçersiz madenci cüzdan adresi.'}), 400
 
     coin_type_key = blockchain.sub_coin_name if selected_coin == "ALT" else "MAIN"
     last_block = blockchain.get_last_block(coin_type_key)
@@ -808,7 +802,7 @@ def mine():
         mining_difficulty = blockchain.get_mining_power_main(miner_address)
         target_power = mining_difficulty
         if mining_difficulty <= 0.0 or blockchain.get_total_mined("MAIN") >= blockchain.get_effective_max_supply(miner_address):
-            return jsonify({'message': 'Main coin has reached maximum supply ceiling.'}), 400
+            return jsonify({'message': 'Main Coin maksimum arz tavanına (21.000.000) ulaştı.'}), 400
     else:
         mining_difficulty = blockchain.get_mining_power_shield(miner_address)
         target_power = blockchain.get_shield_impact_power()
@@ -823,7 +817,7 @@ def mine():
         rem = max(0, blockchain.get_effective_max_supply(miner_address) - blockchain.get_total_mined("MAIN"))
         reward = min(blockchain.BASE_MAIN_REWARD, rem)
         blockchain.new_transaction(sender="0", recipient=miner_address, amount=reward, coin_type="MAIN")
-        earned = f"{reward} Main Coin (Mining Power: {round(mining_difficulty, 4)})"
+        earned = f"{reward} Main Coin (Madencilik Gücü: {round(mining_difficulty, 4)})"
     else:
         reward = 1 
         blockchain.new_transaction(
@@ -833,12 +827,14 @@ def mine():
             coin_type=blockchain.sub_coin_name, 
             powers=[target_power]
         )
-        earned = f"{reward} Shield Coin (Inception Power: {round(target_power, 4)} | Mining Power: {round(mining_difficulty, 4)})"
+        p_disp = round(target_power, 4) if target_power >= 0.001 else target_power
+        earned = f"{reward} Shield Coin (Doğuş Gücü: {p_disp})"
 
     block = blockchain.mint_block(
         proof=attempts, 
         coin_type=coin_type_key,
-        previous_hash=blockchain.hash(last_block) if last_block else '1'
+        previous_hash=blockchain.hash(last_block) if last_block else '1',
+        user_tier=p2p_network.my_tier
     )
 
     p2p_network.broadcast_block(block)
@@ -848,6 +844,9 @@ def mine():
         'earned': earned,
         'mining_attempts': attempts,
         'block_index': block['index'],
+        'space_id': block.get('space_id', 1),
+        'space_level': block.get('space_level', 1),
+        'node_assigned_tier': f"%{p2p_network.my_tier}",
         'chain_type': coin_type_key
     }), 200
 
@@ -861,11 +860,11 @@ def protocol_action():
     selected_tier = data.get('target_tier', 'any')
 
     if not address or not private_key or not verify_key_match(private_key, address):
-        return jsonify({'error': 'Access denied: 256-bit cryptographic signature mismatch.'}), 403
+        return jsonify({'error': 'Erişim engellendi: 256-bit imza uyuşmazlığı.'}), 403
 
     all_user_tokens = blockchain.get_user_shield_tokens(address, include_pending=True)
     if not all_user_tokens:
-        return jsonify({'error': 'Wallet holds zero Shield Coins.'}), 400
+        return jsonify({'error': 'Cüzdanda yakılacak Shield Coin bulunmuyor.'}), 400
 
     if selected_tier == 'any':
         eligible_tokens = list(all_user_tokens)
@@ -874,29 +873,21 @@ def protocol_action():
 
     tier_available_count = len(eligible_tokens)
     if tier_available_count == 0:
-        return jsonify({'error': f'No tokens available in selected tier ({selected_tier}).'}), 400
+        return jsonify({'error': f'Seçilen kademede ({selected_tier}) token bulunamadı.'}), 400
 
     req_count = data.get('burn_count')
     if req_count is not None and str(req_count).strip() != "":
-        try:
-            burn_amount = int(req_count)
-        except ValueError:
-            return jsonify({'error': 'Burn amount must be an integer.'}), 400
+        burn_amount = int(req_count)
     else:
-        alt_percentage = data.get('alt_percentage', 100)
-        try:
-            pct = float(alt_percentage)
-        except ValueError:
-            return jsonify({'error': 'Percentage must be numeric.'}), 400
+        pct = float(data.get('alt_percentage', 100))
         burn_amount = max(1, int((tier_available_count * pct) / 100.0))
 
     if burn_amount <= 0 or burn_amount > tier_available_count:
-        return jsonify({'error': f'Invalid quantity. Available: {tier_available_count}, Requested: {burn_amount}.'}), 400
+        return jsonify({'error': f'Geçersiz miktar. Mevcut: {tier_available_count}, İstenen: {burn_amount}.'}), 400
 
     burned_tokens = eligible_tokens[:burn_amount]
     total_raw_power = sum(burned_tokens)
     effective_power = total_raw_power / 99.0
-    avg_power = round(total_raw_power / len(burned_tokens), 6)
 
     success, msg = blockchain.new_transaction(
         sender=address, 
@@ -916,68 +907,61 @@ def protocol_action():
             burned_qty = max(1, int(effective_power * 100))
             if scope == "global":
                 blockchain.burned_main_coins += burned_qty
-                message = f"[GLOBAL] Supply permanently destroyed: {burned_qty} Main Coins removed."
+                message = f"[GLOBAL] Arz imha edildi: {burned_qty} Main Coin kalıcı olarak silindi."
             else:
                 stats['personal_burned'] += burned_qty
-                message = f"[PERSONAL] Supply quota reduced: {burned_qty} Main Coins subtracted."
-
+                message = f"[KİŞİSEL] Bireysel kota düşürüldü: {burned_qty} Main Coin eksiltildi."
         elif action == "expand_supply":
             expand_qty = max(1, int(effective_power * 150))
             if scope == "global":
                 blockchain.dynamic_supply_offset = min(blockchain.supply_variance_limit, blockchain.dynamic_supply_offset + expand_qty)
-                message = f"[GLOBAL] Capacity expanded: Global limit +{expand_qty} added."
+                message = f"[GLOBAL] Kapasite genişletildi: +{expand_qty} eklendi."
             else:
                 stats['personal_supply_offset'] += expand_qty
-                message = f"[PERSONAL] Personal capacity expanded: Limit +{expand_qty} added."
-
+                message = f"[KİŞİSEL] Bireysel kota genişletildi: +{expand_qty} eklendi."
         elif action == "boost_price":
             boost_val = round(min(5.0, effective_power * 0.5), 2)
             if scope == "global":
                 blockchain.market_boost_bonus = boost_val
-                message = f"[GLOBAL] Dynamic coefficient boosted by +{boost_val}%."
+                message = f"[GLOBAL] Katsayı +%{boost_val} oranında yükseltildi."
             else:
                 stats['personal_boost'] = boost_val
-                message = f"[PERSONAL] Wallet dynamic coefficient boosted by +{boost_val}%."
-
+                message = f"[KİŞİSEL] Katsayı +%{boost_val} oranında yükseltildi."
         elif action == "discount_price":
             reduction_val = round(min(5.0, effective_power * 0.5), 2)
             if scope == "global":
                 blockchain.market_boost_bonus = -reduction_val
-                message = f"[GLOBAL] Discount mode active: -{reduction_val}% coefficient applied."
+                message = f"[GLOBAL] İndirim uygulandı: -%{reduction_val}."
             else:
                 stats['personal_boost'] = -reduction_val
-                message = f"[PERSONAL] Discount coefficient applied: -{reduction_val}%."
-
+                message = f"[KİŞİSEL] İndirim uygulandı: -%{reduction_val}."
         elif action == "peg_static":
             if scope == "global":
                 blockchain.market_peg_active = True
                 blockchain.market_boost_bonus = 0.0
-                message = "[GLOBAL] Valuation benchmark locked and stabilized."
+                message = "[GLOBAL] Değerleme referansı sabitlendi."
             else:
                 stats['personal_boost'] = 0.0
-                message = "[PERSONAL] Wallet parameters stabilized."
-
-    tier_labels = {
-        'tier_99_70': 'Tier 1 (%99 - %70 Power)',
-        'tier_70_50': 'Tier 2 (%70 - %50 Power)',
-        'tier_50_30': 'Tier 3 (%50 - %30 Power)',
-        'tier_30_10': 'Tier 4 (%30 - %10 Power)',
-        'tier_10_1': 'Tier 5 (%10 - %1 Power)',
-        'tier_below_1': 'Tier 6 (<%1 Floor)',
-        'any': 'Blended / Entire Portfolio'
-    }
+                message = "[KİŞİSEL] Parametreler sabitlendi."
 
     return jsonify({
         'status': 'Success',
         'action_result': message,
-        'selected_tier': tier_labels.get(selected_tier, selected_tier),
         'burned_count': burn_amount,
-        'burned_tokens_raw_powers': burned_tokens,
         'total_raw_power_released': round(total_raw_power, 6),
-        'average_power_of_burned_tokens': avg_power,
-        'effective_impact_multiplier': round(effective_power, 6),
         'remaining_total_shield': len(blockchain.get_user_shield_tokens(address, True))
     }), 200
+
+@app.route('/shard/restore', methods=['POST'])
+def restore_shard_endpoint():
+    data = request.get_json()
+    coin_type = data.get('coin_type', 'MAIN')
+    index = data.get('index')
+    remote_txs = data.get('transactions', [])
+    
+    blockchain.storage.request_restore_shard(coin_type, index, remote_txs)
+    elevated, msg = blockchain.storage.system_validate_and_elevate(coin_type, index)
+    return jsonify({'success': elevated, 'message': msg}), 200 if elevated else 400
 
 @app.route('/chain', methods=['GET'])
 def full_chain():
@@ -1012,8 +996,9 @@ def full_chain():
             'main_chain_height': blockchain.get_chain_length("MAIN"),
             'alt_chain_height': blockchain.get_chain_length(blockchain.sub_coin_name),
             'main_coin_supply': f"{blockchain.get_total_mined('MAIN')} / {blockchain.get_effective_max_supply(user_address)}",
-            'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Active, Burned: {burned_alt})",
-            'current_network_mint_power': f"{shield_impact_power}"
+            'shield_coin_circulating': f"{total_alt_mined - burned_alt} (Aktif, Yakılan: {burned_alt})",
+            'current_network_mint_power': f"{shield_impact_power}",
+            'active_epoch_day': p2p_network.current_epoch
         },
         '2_USER_DATA': {
             'wallet_address': user_address, 
@@ -1021,15 +1006,16 @@ def full_chain():
             'shield_coin_balance': user_shield_count,
             'shield_overall_average_power': overall_avg,
             'tiers': tier_summary,
-            'all_tokens_sorted': sorted(user_tokens, reverse=True)
+            'all_tokens_sorted': sorted(user_tokens, reverse=True),
+            'node_storage_tier': f"%{p2p_network.my_tier}"
         }
     }), 200
 
 # =====================================================================
-# DUAL-MODE LAUNCH CONTROLLER (HEADLESS SERVER vs NATIVE WINDOW)
+# BAĞIMSIZ ÇALIŞTIRMA KONTROLCÜSÜ (SUNUCU VS MASAÜSTÜ PENCERESİ)
 # =====================================================================
-def run_flask_service(port):
-    app.run(host='0.0.0.0', port=port, threaded=True)
+def run_flask_service(host_ip, port):
+    app.run(host=host_ip, port=port, threaded=True)
 
 if __name__ == '__main__':
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 5000
@@ -1041,23 +1027,28 @@ if __name__ == '__main__':
     )
 
     if is_headless_server:
-        print(f"[*] Variable Coin Sovereign Node running in headless mode on port {port}...")
+        print(f"[*] Variable Coin Bağımsız Düğümü sunucu modunda 0.0.0.0:{port} üzerinde çalışıyor...")
         app.run(host='0.0.0.0', port=port, threaded=True)
     else:
-        flask_thread = threading.Thread(target=run_flask_service, args=(port,), daemon=True)
+        # Masaüstü yerel modunda 127.0.0.1 bağlanır (Güvenlik Duvarı uyarısı çıkmaz)
+        flask_thread = threading.Thread(target=run_flask_service, args=('127.0.0.1', port), daemon=True)
         flask_thread.start()
         sleep(1.0)
 
         if webview is not None:
-            webview.create_window(
-                title="Variable Coin Sovereign Node",
-                url=f"http://127.0.0.1:{port}",
-                width=1280,
-                height=850,
-                min_size=(960, 640),
-                resizable=True
-            )
-            webview.start()
+            try:
+                webview.create_window(
+                    title="Variable Coin Sovereign Node",
+                    url=f"http://127.0.0.1:{port}",
+                    width=1280,
+                    height=850,
+                    min_size=(960, 640),
+                    resizable=True
+                )
+                webview.start()
+            except Exception:
+                webbrowser.open(f"http://127.0.0.1:{port}")
+                flask_thread.join()
         else:
             webbrowser.open(f"http://127.0.0.1:{port}")
             flask_thread.join()
