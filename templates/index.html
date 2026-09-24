@@ -286,7 +286,6 @@
             font-size: 12px;
         }
 
-        /* Modal Styles */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -366,9 +365,7 @@
             <p style="color: #8b949e; margin: 0; font-size: 13px;">Bitcoin-Grade 256-Bit Cryptographic Protocol Center</p>
         </div>
         <div class="header-controls">
-            <!-- WHITEPAPER MODAL BUTTON -->
             <button class="btn-blue" onclick="openWhitepaperModal()" style="width: auto; padding: 8px 16px; margin: 0; background-color: #8957e5;">WHITEPAPER</button>
-            <!-- P2P DESKTOP NODE DOWNLOAD BUTTON (ZIP / SAFE PACKAGE) -->
             <a href="/download" class="download-btn">⬇ DOWNLOAD NODE (.ZIP)</a>
             <div id="google_translate_element"></div>
             <button class="btn-blue" onclick="refreshNetwork()" style="width: auto; padding: 8px 16px; margin: 0;">REFRESH</button>
@@ -409,12 +406,12 @@
             <div>
                 <label class="stat-label" style="color: #58a6ff !important; font-weight: bold;">🎯 Target Power Tier to Burn:</label>
                 <select id="cmd-tier" style="border-color: #58a6ff; font-weight: bold;">
-                    <option value="tier_99_70">🟢 Tier 1 (%99 - %70 Power) Legendary Tokens</option>
-                    <option value="tier_70_50">🔵 Tier 2 (%70 - %50 Power) High Tokens</option>
-                    <option value="tier_50_30">🟡 Tier 3 (%50 - %30 Power) Medium Tokens</option>
-                    <option value="tier_30_10">🟠 Tier 4 (%30 - %10 Power) Low Tokens</option>
-                    <option value="tier_10_1">🟣 Tier 5 (%10 - %1 Power) Weak Tokens</option>
-                    <option value="tier_below_1">⚪ Tier 6 (<%1 Floor) Asymptotic Tokens</option>
+                    <option value="tier_99_70">🟢 Tier 1 (70% - 99% Power) Legendary Tokens</option>
+                    <option value="tier_70_50">🔵 Tier 2 (50% - 70% Power) High Tokens</option>
+                    <option value="tier_50_30">🟡 Tier 3 (30% - 50% Power) Medium Tokens</option>
+                    <option value="tier_30_10">🟠 Tier 4 (10% - 30% Power) Low Tokens</option>
+                    <option value="tier_10_1">🟣 Tier 5 (1% - 10% Power) Weak Tokens</option>
+                    <option value="tier_below_1">⚪ Tier 6 (&lt;1% Floor) Asymptotic Tokens</option>
                     <option value="any">🌐 Any / Entire Portfolio</option>
                 </select>
             </div>
@@ -433,7 +430,7 @@
                 <input type="number" id="cmd-burn-count" placeholder="Number of tokens to burn..." min="1">
             </div>
             <div>
-                <label class="stat-label">Or Burn by Tier Percentage (%): <span id="pct-val" style="color: #58a6ff;">100</span>%</label>
+                <label class="stat-label">Or Burn by Tier Percentage: <span id="pct-val" style="color: #58a6ff;">100</span>%</label>
                 <input type="range" id="cmd-percentage" min="1" max="100" value="100" oninput="document.getElementById('pct-val').innerText = this.value; document.getElementById('cmd-burn-count').value = '';" style="margin-top: 14px; cursor: pointer;">
             </div>
         </div>
@@ -501,32 +498,32 @@
                 <h4 style="margin: 16px 0 6px 0; font-size: 12px; color: #8b949e;">INVENTORY DISTRIBUTION BY POWER TIER:</h4>
                 <div class="tier-inventory-grid">
                     <div class="tier-box t1">
-                        <div class="tier-box-title" style="color: #3fb950;">%99 - %70 POWER</div>
+                        <div class="tier-box-title" style="color: #3fb950;">70% - 99% POWER</div>
                         <div class="tier-box-count" id="t1-count">0</div>
                         <div class="tier-box-avg" id="t1-avg">Avg: 0.0</div>
                     </div>
                     <div class="tier-box t2">
-                        <div class="tier-box-title" style="color: #58a6ff;">%70 - %50 POWER</div>
+                        <div class="tier-box-title" style="color: #58a6ff;">50% - 70% POWER</div>
                         <div class="tier-box-count" id="t2-count">0</div>
                         <div class="tier-box-avg" id="t2-avg">Avg: 0.0</div>
                     </div>
                     <div class="tier-box t3">
-                        <div class="tier-box-title" style="color: #d29922;">%50 - %30 POWER</div>
+                        <div class="tier-box-title" style="color: #d29922;">30% - 50% POWER</div>
                         <div class="tier-box-count" id="t3-count">0</div>
                         <div class="tier-box-avg" id="t3-avg">Avg: 0.0</div>
                     </div>
                     <div class="tier-box t4">
-                        <div class="tier-box-title" style="color: #db6d28;">%30 - %10 POWER</div>
+                        <div class="tier-box-title" style="color: #db6d28;">10% - 30% POWER</div>
                         <div class="tier-box-count" id="t4-count">0</div>
                         <div class="tier-box-avg" id="t4-avg">Avg: 0.0</div>
                     </div>
                     <div class="tier-box t5">
-                        <div class="tier-box-title" style="color: #a371f7;">%10 - %1 POWER</div>
+                        <div class="tier-box-title" style="color: #a371f7;">1% - 10% POWER</div>
                         <div class="tier-box-count" id="t5-count">0</div>
                         <div class="tier-box-avg" id="t5-avg">Avg: 0.0</div>
                     </div>
                     <div class="tier-box t6">
-                        <div class="tier-box-title" style="color: #8b949e;">&lt;%1 FLOOR</div>
+                        <div class="tier-box-title" style="color: #8b949e;">&lt;1% FLOOR</div>
                         <div class="tier-box-count" id="t6-count">0</div>
                         <div class="tier-box-avg" id="t6-avg">Avg: 0.0</div>
                     </div>
@@ -719,12 +716,12 @@
             setTierUI('t6', 'tier_below_1');
 
             const tierSelect = document.getElementById('cmd-tier');
-            tierSelect.options[0].text = `🟢 Tier 1 (%99 - %70 Power) (${tiers['tier_99_70']?.count || 0} Units)`;
-            tierSelect.options[1].text = `🔵 Tier 2 (%70 - %50 Power) (${tiers['tier_70_50']?.count || 0} Units)`;
-            tierSelect.options[2].text = `🟡 Tier 3 (%50 - %30 Power) (${tiers['tier_50_30']?.count || 0} Units)`;
-            tierSelect.options[3].text = `🟠 Tier 4 (%30 - %10 Power) (${tiers['tier_30_10']?.count || 0} Units)`;
-            tierSelect.options[4].text = `🟣 Tier 5 (%10 - %1 Power) (${tiers['tier_10_1']?.count || 0} Units)`;
-            tierSelect.options[5].text = `⚪ Tier 6 (<%1 Floor) (${tiers['tier_below_1']?.count || 0} Units)`;
+            tierSelect.options[0].text = `🟢 Tier 1 (70% - 99% Power) (${tiers['tier_99_70']?.count || 0} Units)`;
+            tierSelect.options[1].text = `🔵 Tier 2 (50% - 70% Power) (${tiers['tier_70_50']?.count || 0} Units)`;
+            tierSelect.options[2].text = `🟡 Tier 3 (30% - 50% Power) (${tiers['tier_50_30']?.count || 0} Units)`;
+            tierSelect.options[3].text = `🟠 Tier 4 (10% - 30% Power) (${tiers['tier_30_10']?.count || 0} Units)`;
+            tierSelect.options[4].text = `🟣 Tier 5 (1% - 10% Power) (${tiers['tier_10_1']?.count || 0} Units)`;
+            tierSelect.options[5].text = `⚪ Tier 6 (<1% Floor) (${tiers['tier_below_1']?.count || 0} Units)`;
             tierSelect.options[6].text = `🌐 Any / Entire Portfolio (${u["shield_coin_balance"] || 0} Units)`;
 
             const tagsBox = document.getElementById('token-tags-box');
