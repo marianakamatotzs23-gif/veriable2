@@ -20,10 +20,19 @@ except ImportError:
     webview = None
 
 # =====================================================================
-# GLOBAL PROTOCOL CONFIGURATION & STORAGE PATHS
+# GLOBAL PROTOCOL CONFIGURATION & HIDDEN SYSTEM STORAGE PATHS
 # =====================================================================
-MATRIX_BASE_DIR = "variable_matrix"
-OVERFLOW_STORAGE_FILE = "overflow_matrix.json"
+# On Windows, avoids desktop clutter by routing storage to AppData/Roaming/VariableCoin.
+# On Linux/VPS, operates directly within the application execution directory.
+if sys.platform == 'win32':
+    BASE_STORAGE_DIR = os.path.join(os.getenv('APPDATA', os.path.expanduser('~')), 'VariableCoin')
+else:
+    BASE_STORAGE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+os.makedirs(BASE_STORAGE_DIR, exist_ok=True)
+
+MATRIX_BASE_DIR = os.path.join(BASE_STORAGE_DIR, "variable_matrix")
+OVERFLOW_STORAGE_FILE = os.path.join(BASE_STORAGE_DIR, "overflow_matrix.json")
 BOOTSTRAP_PEERS = ["104.248.255.163:6000"]
 STORAGE_SAFETY_MARGIN_MB = 250   # Triggers overflow when free space drops below 250 MB
 THERMAL_TIME_THRESHOLD = 0.85     # Maximum processing time before throttling
@@ -95,7 +104,7 @@ class StorageGovernor:
     @staticmethod
     def get_free_disk_mb():
         try:
-            total, used, free = shutil.disk_usage(".")
+            total, used, free = shutil.disk_usage(BASE_STORAGE_DIR)
             return free // (1024 * 1024)
         except Exception:
             return 1000
@@ -109,7 +118,7 @@ class StorageGovernor:
         """
         DOES NOT inspect hardware capability (CPU, RAM, Disk).
         Assigns an unbiased random storage allocation percentage between 1 and 99 every 24h.
-        Guarantees minimum 1% (anti-freerider) and maximum 99% (anti-monopoly).
+        Runs purely in the background; percentages are never exposed publicly.
         """
         seed = f"VERIABLE_PURE_RANDOM_TIER_{node_id}_{epoch}"
         raw_hash = int(hashlib.sha256(seed.encode()).hexdigest(), 16)
@@ -141,7 +150,7 @@ class ShardedResilientVariableStorageEngine:
     - Each directory stores blocks up to a 1-99 depth scale.
     - When disk capacity is scarce, transactions are offloaded while block ownership
       and coin balances are permanently locked down to a 1.0 base anchor (BASE_LOCKED_OFFLOADED).
-    - Pruned blocks eliminate 99% of transaction overhead.
+    - Pruned blocks eliminate 99% of transaction overhead without user intervention.
     """
     def __init__(self, base_dir=MATRIX_BASE_DIR):
         self.base_dir = base_dir
@@ -176,8 +185,6 @@ class ShardedResilientVariableStorageEngine:
 
         free_disk_mb = StorageGovernor.get_free_disk_mb()
 
-        # If disk is constrained or block tier exceeds node daily allocation:
-        # Offload physical payload, but retain the block cryptographic anchor at 1.0 base.
         if free_disk_mb < STORAGE_SAFETY_MARGIN_MB:
             block['power_scale'] = 1.0
             block['status'] = "BASE_LOCKED_OFFLOADED"
@@ -525,7 +532,15 @@ class Blockchain(object):
         return int(total)
 
     def get_shield_impact_power(self):
-        """Shield Coin: Smooth tiered decay, damped down to 0.000000001 floor beyond 20M."""
+        """
+        SHIELD COIN IMPACT POWER (Decays rapidly at first, then slows down drastically):
+        - 0 to 1,000 coins: Drops steeply from 99.0 to 70.0 (Fast initial erosion).
+        - 1,000 to 100,000 coins: Slows down from 70.0 to 50.0.
+        - 100,000 to 4,000,000 coins: 50.0 to 30.0.
+        - 4,000,000 to 10,000,000 coins: 30.0 to 10.0.
+        - 10,000,000 to 20,000,000 coins: 10.0 to 1.0.
+        - Beyond 20,000,000: Decays asymptotically in decimal steps (0.1, 0.01, 0.001...).
+        """
         alt_mined = self.get_total_mined(self.sub_coin_name)
         if alt_mined <= 0:
             return 99.0
@@ -560,10 +575,24 @@ class Blockchain(object):
             return max(0.000000001, round(power, 9))
 
     def get_mining_power_shield(self, address=None):
-        return self.get_shield_impact_power()
+        """
+        SHIELD COIN MINING POWER (PoW Difficulty Scale):
+        Independent from impact power.
+        Progresses 10x faster than Main Coin across the supply scale without sudden cliffs.
+        """
+        alt_mined = self.get_total_mined(self.sub_coin_name)
+        progress = (alt_mined * 10.0) / float(self.BASE_MAX_MAIN)
+        
+        if progress < 1.0:
+            power = 99.0 * (1.0 - progress)
+        else:
+            excess = alt_mined - 2100000
+            power = 1.0 / (1.0 + (excess / 1000000.0))
+            
+        return max(0.0001, round(power, 4))
 
     def get_mining_power_main(self, address=None):
-        """Main Coin: Scales toward 21M limit and strictly seals at 0.0 power."""
+        """Main Coin: Scales smoothly toward 21M limit and strictly seals at 0.0 power."""
         total_mined = self.get_total_mined("MAIN")
         max_limit = self.get_effective_max_supply(address)
         if total_mined >= max_limit:
@@ -574,7 +603,7 @@ class Blockchain(object):
         return max(0.0001, round(power, 4))
 
 # =====================================================================
-# 24-HOUR ROTATING P2P DHT MESH & THERMAL DISPATCHER
+# 24-HOUR ROTATING P2P DHT MESH & OUTBOUND BITCOIN-STYLE FALLBACK
 # =====================================================================
 class P2PNetworkManager:
     def __init__(self, blockchain, tcp_port=6000, udp_port=6001):
@@ -585,26 +614,67 @@ class P2PNetworkManager:
         
         self.node_id = hex(uuid.getnode())
         self.current_epoch = int(time() // 86400)
-        # Hardware-agnostic unbiased random allocation (1-99)
         self.my_tier = StorageGovernor.assign_pure_random_tier(self.node_id, self.current_epoch)
         self.is_overheating = False
         
-        self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Inbound socket (if firewall allows)
         try:
+            self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.server.bind(('0.0.0.0', self.tcp_port))
             self.server.listen(25)
             threading.Thread(target=self._listen_tcp, daemon=True).start()
         except Exception:
             pass
 
+        # Bitcoin-style Outbound Fallback Loops (Works even if Windows Firewall blocks port 6000)
         threading.Thread(target=self._bootstrap_discovery_loop, daemon=True).start()
+        threading.Thread(target=self._outbound_sync_loop, daemon=True).start()
         threading.Thread(target=self._broadcast_beacon, daemon=True).start()
         threading.Thread(target=self._listen_beacon, daemon=True).start()
         threading.Thread(target=self._daily_rotation_loop, daemon=True).start()
 
+    def _outbound_sync_loop(self):
+        """
+        Bitcoin Core Fallback:
+        Even if local inbound listening is blocked by Windows Firewall,
+        actively connects outward to seeds, checks chain heights, and fetches missing blocks.
+        """
+        while True:
+            sleep(8)
+            target_peers = list(self.peers) if self.peers else list(BOOTSTRAP_PEERS)
+            for peer in target_peers:
+                try:
+                    s_ip, s_port = peer.split(':')
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(3.0)
+                    s.connect((s_ip, int(s_port)))
+
+                    for c_type in ("MAIN", self.blockchain.sub_coin_name):
+                        local_height = self.blockchain.get_chain_length(c_type)
+                        s.send(json.dumps({"action": "GET_CHAIN_HEIGHT", "coin_type": c_type}).encode())
+                        resp = s.recv(4096).decode()
+                        if resp:
+                            data = json.loads(resp)
+                            remote_height = data.get("height", 0)
+                            if remote_height > local_height:
+                                for b_idx in range(local_height + 1, remote_height + 1):
+                                    s_req = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                                    s_req.settimeout(3.0)
+                                    s_req.connect((s_ip, int(s_port)))
+                                    s_req.send(json.dumps({"action": "GET_BLOCK", "coin_type": c_type, "index": b_idx}).encode())
+                                    b_resp = s_req.recv(65536).decode()
+                                    s_req.close()
+                                    if b_resp:
+                                        b_obj = json.loads(b_resp).get("block")
+                                        if b_obj:
+                                            self.handle_incoming_block(b_obj)
+                    s.close()
+                except Exception:
+                    pass
+
     def _daily_rotation_loop(self):
-        """Rotates random storage tier every 24 hours across all infinite space folders."""
+        """Rotates random storage tier every 24 hours silently in the background."""
         while True:
             sleep(3600)
             new_epoch = int(time() // 86400)
@@ -654,7 +724,7 @@ class P2PNetworkManager:
 
     def _broadcast_beacon(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BEACON if hasattr(socket, 'SO_BEACON') else socket.SO_BROADCAST, 1)
         while True:
             try:
                 msg = f"VERIABLE_NODE:{self.tcp_port}".encode()
@@ -706,6 +776,10 @@ class P2PNetworkManager:
                 if action == "HELLO":
                     self.register_peer(f"{addr[0]}:{msg.get('address', '').split(':')[-1]}")
                     conn.send(json.dumps({"peers": list(self.peers)}).encode())
+                elif action == "GET_CHAIN_HEIGHT":
+                    c_type = msg.get("coin_type", "MAIN")
+                    h = self.blockchain.get_chain_length(c_type)
+                    conn.send(json.dumps({"height": h}).encode())
                 elif action == "NEW_BLOCK":
                     self.handle_incoming_block(msg.get("block"))
                 elif action == "GET_BLOCK":
@@ -727,7 +801,11 @@ class P2PNetworkManager:
 
     def broadcast_block(self, block):
         payload = {"action": "NEW_BLOCK", "block": block}
-        for peer in list(self.peers):
+        targets = set(self.peers)
+        for seed in BOOTSTRAP_PEERS:
+            targets.add(seed)
+            
+        for peer in list(targets):
             try:
                 ip, port = peer.split(':')
                 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -757,7 +835,16 @@ def home():
 
 @app.route('/download', methods=['GET'])
 def download_app():
-    for f in ["veriable2-node.zip", os.path.join("dist", "veriable2-node.zip"), "veriable2.exe", os.path.join("dist", "veriable2.exe")]:
+    script_dir = os.path.abspath(os.path.dirname(__file__))
+    candidates = [
+        "veriable2-node.zip",
+        os.path.join("dist", "veriable2-node.zip"),
+        os.path.join(script_dir, "veriable2-node.zip"),
+        os.path.join(script_dir, "dist", "veriable2-node.zip"),
+        "veriable2.exe",
+        os.path.join("dist", "veriable2.exe")
+    ]
+    for f in candidates:
         if os.path.exists(f):
             return send_file(f, as_attachment=True)
     return jsonify({"error": "Node binary not found on local disk."}), 404
@@ -812,7 +899,6 @@ def mine():
         )
         p2p_network.broadcast_block(block)
 
-        # MAIN COIN CLEAN OUTPUT (No attempts, displays only reward, power and index)
         return jsonify({
             'status': 'Success',
             'asset': 'Main Coin',
@@ -831,7 +917,7 @@ def mine():
             powers=[target_impact_power]
         )
 
-        m_power_disp = round(mining_difficulty, 4) if mining_difficulty >= 0.001 else mining_difficulty
+        m_power_disp = round(mining_difficulty, 4)
         i_power_disp = round(target_impact_power, 4) if target_impact_power >= 0.001 else target_impact_power
 
         block = blockchain.mint_block(
@@ -842,7 +928,6 @@ def mine():
         )
         p2p_network.broadcast_block(block)
 
-        # SHIELD COIN CLEAN OUTPUT (No attempts, displays both mining power & impact power)
         return jsonify({
             'status': 'Success',
             'asset': 'Shield Coin',
@@ -1030,7 +1115,6 @@ if __name__ == '__main__':
         print(f"[*] Variable Coin Sovereign Node listening on 0.0.0.0:{port}...")
         app.run(host='0.0.0.0', port=port, threaded=True)
     else:
-        # Local desktop mode binds exclusively to 127.0.0.1 (No Firewall Prompts)
         flask_thread = threading.Thread(target=run_flask_service, args=('127.0.0.1', port), daemon=True)
         flask_thread.start()
         sleep(1.0)
