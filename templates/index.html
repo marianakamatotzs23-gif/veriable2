@@ -366,9 +366,30 @@
         </div>
         <div class="header-controls">
             <button class="btn-blue" onclick="openWhitepaperModal()" style="width: auto; padding: 8px 16px; margin: 0; background-color: #8957e5;">WHITEPAPER</button>
-            <a href="/download" class="download-btn">⬇ DOWNLOAD NODE (.ZIP)</a>
+            <a href="/download" class="download-btn" title="Download standalone Windows desktop node">⬇ DOWNLOAD NODE (.ZIP)</a>
             <div id="google_translate_element"></div>
             <button class="btn-blue" onclick="refreshNetwork()" style="width: auto; padding: 8px 16px; margin: 0;">REFRESH</button>
+        </div>
+    </div>
+
+    <!-- SYSTEM & FIREWALL SECURITY ADVISORY (USER GUIDANCE PANEL) -->
+    <div id="security-advisory" style="background: rgba(22, 27, 34, 0.95); border: 1px solid #388bfd; border-left: 5px solid #238636; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 280px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                    <span style="font-size: 16px;">🛡️</span>
+                    <strong style="color: #58a6ff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">Security & Desktop Node Launch Guide (100% Open-Source & Safe)</strong>
+                </div>
+                <p style="margin: 0 0 8px 0; color: #c9d1d9; font-size: 12.5px; line-height: 1.5;">
+                    Variable Coin Protocol is an independent, open-source blockchain daemon. Because standalone binaries lack commercial digital certificates, Windows Defender or antivirus programs may show standard security prompts upon initial launch. <strong>This is a false positive and completely safe.</strong>
+                </p>
+                <div style="background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 10px 12px; font-size: 12px; color: #8b949e; line-height: 1.6;">
+                    <span style="color: #d29922; font-weight: bold;">⚡ Recommended Launch Configuration:</span><br>
+                    1. <strong>Windows SmartScreen:</strong> If prompted with <em>"Windows protected your PC"</em>, click <strong>"More info"</strong> &rarr; <strong>"Run anyway"</strong>.<br>
+                    2. <strong>Windows Firewall:</strong> When the network prompt appears, check <strong>BOTH boxes</strong> (<em>Private networks</em> and <em>Public networks</em>) and click <strong>"Allow access"</strong>. If skipped or cancelled, the node automatically activates <strong>Bitcoin-style outbound sync</strong> to maintain full mining and ledger capabilities without interruption.
+                </div>
+            </div>
+            <button onclick="document.getElementById('security-advisory').style.display='none'" style="width: auto; padding: 6px 12px; margin: 0; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; border-radius: 6px; font-size: 11px; cursor: pointer; white-space: nowrap;">DISMISS</button>
         </div>
     </div>
 
@@ -568,8 +589,8 @@
         <div class="whitepaper-body">
             <h3>1. Access Architecture: Web Showcase vs. Sovereign Desktop Node Option</h3>
             <ul>
-                <li><strong>Web Showcase and Quick Access:</strong> The web interface (<code>veriable2.com</code>) serves as an accessible entry point to the ecosystem, an informational showcase, and a distribution hub for downloading the desktop application. Users can explore network metrics and general protocol status directly through standard web browsers.</li>
-                <li><strong>Local Installation Option (Desktop Sovereign Node - <code>veriable2.exe</code>):</strong> Alongside the web interface, users have the option to run the application directly on their local machines. The desktop client connects straight to the serverless peer-to-peer (P2P) Distributed Hash Table (DHT) mesh without relying on intermediary web servers or third-party web runtimes.</li>
+                <li><strong>Web Showcase and Quick Access:</strong> The web interface serves as an accessible entry point to the ecosystem, an informational showcase, and a distribution hub for downloading the desktop application. Users can explore network metrics and general protocol status directly through standard web browsers.</li>
+                <li><strong>Local Installation Option (Desktop Sovereign Node):</strong> Alongside the web interface, users have the option to run the application directly on their local machines. The desktop client connects straight to the serverless peer-to-peer (P2P) Distributed Hash Table (DHT) mesh without relying on intermediary web servers or third-party web runtimes.</li>
                 <li><strong>Independent Verification & State Enforcement:</strong> Operating a local desktop installation turns the client into an autonomous validation engine. Users independently verify block validity, engage directly in peer-to-peer block propagation, and enforce protocol invariant rules entirely on their own hardware.</li>
             </ul>
 
@@ -584,14 +605,14 @@
             <h3>3. Helper Token (Shield Coin): Tiered Power & Decimal Damping Economics</h3>
             <ul>
                 <li><strong>Dual Functional Division:</strong> Main Coin functions as a strictly capped store of value bounded by 21,000,000, while Shield Coin acts as an elastic, algorithmic shock absorber engineered to counteract market volatility.</li>
-                <li><strong>Tiered Power Milestones:</strong> Shield Coin impact power and mining difficulty begin at <strong>99.0</strong> and scale down through definitive cumulative supply milestones:
+                <li><strong>Tiered Power Milestones:</strong> Shield Coin impact power begins at <strong>99.0</strong> and scales down through definitive cumulative supply milestones:
                     <ul>
-                        <li><code>0 – 1,000 Coins:</code> 99.0 &rarr; 70.0 (Tier 1 Legendary Tokens)</li>
+                        <li><code>0 – 1,000 Coins:</code> 99.0 &rarr; 70.0 (Tier 1 Legendary Tokens - Rapid initial decay)</li>
                         <li><code>1,000 – 100,000 Coins:</code> 70.0 &rarr; 50.0 (Tier 2 High Tokens)</li>
                         <li><code>100,000 – 4,000,000 Coins:</code> 50.0 &rarr; 30.0 (Tier 3 Medium Tokens)</li>
                         <li><code>4,000,000 – 10,000,000 Coins:</code> 30.0 &rarr; 10.0 (Tier 4 Low Tokens)</li>
                         <li><code>10,000,000 – 20,000,000 Coins:</code> 10.0 &rarr; 1.0 (Tier 5 Weak Tokens)</li>
-                        <li><code>20,000,000+ Coins (Infinite Space):</code> Decimal damping scales down every 10,000,000 coins (0.1, 0.01, 0.001...), exponentially narrowing the PoW target space.</li>
+                        <li><code>20,000,000+ Coins (Infinite Space):</code> Decimal damping scales down every 10,000,000 coins (0.1, 0.01, 0.001...), exponentially narrowing the PoW target space down to <code>0.000000001</code>.</li>
                     </ul>
                 </li>
                 <li><strong>Asset Value Pegging (Peg Price):</strong> During market downturns, participants burn Shield Coins to anchor their effective holding price against a predetermined baseline.</li>
@@ -599,11 +620,9 @@
                 <li><strong>Permanent Burn & Supply Contraction:</strong> Triggering stabilization mechanisms permanently routes consumed Shield Coins directly to the unrecoverable dead address (<code>0x000000000000000000000000000000000000dEaD</code>).</li>
             </ul>
 
-            <h3>4. Dual Mining Mathematics & Asymptotic Emission Curves</h3>
+            <h3>4. Dual Mining Mathematics & Decoupled Scaling</h3>
             <ul>
-                <li><strong>Universal 99.0 Base Power:</strong> Every initialized node commences mining operations with an abstract base computational power of <strong>99.0</strong>.</li>
-                <li><strong>Main Coin Mining:</strong> Provides an unvarying <strong>50 Main Coins per block</strong>. Difficulties scale smoothly across the 21,000,000 supply cap, permanently locking power at <strong>0.0</strong> once the ceiling is reached.</li>
-                <li><strong>Shield Coin Mining (99 &rarr; 0.000000001 Perpetual Asymptotic Floor):</strong> Shield Coin issuance is never terminated. Emission decelerates toward an asymptotic lower bound of <strong>0.000000001</strong>, never reaching absolute zero, guaranteeing perpetual network liquidity.</li>
+                <li><strong>Decoupled Dynamics:</strong> Main Coin scales difficulty smoothly to hit 0.0 at 21,000,000 coins. Shield Coin's <strong>mining power</strong> scales 10x faster than Main Coin across a 2,100,000 baseline, maintaining stable and predictable PoW progression, completely distinct from the rapid early drop of its <strong>impact power</strong>.</li>
             </ul>
         </div>
     </div>
